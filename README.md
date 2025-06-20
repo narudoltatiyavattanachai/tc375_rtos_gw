@@ -1,77 +1,22 @@
-# Multi-Core FreeRTOS Implementation for TC375
+# Multi-Core FreeRTOS for AURIX™ TC375
 
-## Overview
-This project has been enhanced to support FreeRTOS running on all three CPU cores of the AURIX™ TC375 microcontroller. Each CPU core runs its own independent FreeRTOS scheduler with dedicated tasks.
+This project demonstrates a minimal multi-core FreeRTOS setup for the Infineon AURIX™ TC375 MCU.
 
-## Architecture
+**Core Assignments:**
+- **CPU0:** System boot, button polling, and LED control logic
+- **CPU1:** LED1 control
+- **CPU2:** LED2 control
 
-### CPU Core Assignments
-- **CPU0**: Button handling core with button polling task
-- **CPU1**: LED1 control task
-- **CPU2**: LED2 control task with interrupt handling
+**Key Files:**
+- `Configurations/FreeRTOSConfig.h`  (CPU0)
+- `Configurations/FreeRTOSConfig1.h` (CPU1)
+- `Configurations/FreeRTOSConfig2.h` (CPU2)
 
-### FreeRTOS Configuration
-Each CPU core has its own FreeRTOS configuration file:
-- `Configurations/FreeRTOSConfig.h` - CPU0 (original)
-- `Configurations/FreeRTOSConfig_CPU1.h` - CPU1 specific
-- `Configurations/FreeRTOSConfig_CPU2.h` - CPU2 specific
-
-### Memory Allocation
-The linker script has been updated with increased memory allocations:
-- **User Stack**: 4KB per CPU (increased from 2KB)
-- **Interrupt Stack**: 2KB per CPU (increased from 1KB)
-- **Heap**: 8KB shared (increased from 4KB)
-- **FreeRTOS Heap**: 32KB per CPU core
-
-## Task Distribution
-
-### CPU0 Tasks
-1. **Button Task** (`task_app_button`)
-   - **File**: `App_Cpu0.c:59`
-   - Polls button state on P00.7 every 50ms
-   - Implements debouncing with 5 consecutive readings
-   - Maintains button press counter
-   - **Controls LED operation via binary semaphore**
-   - **Toggles LED start/stop on each button press**
-   - Pin: P00.7 (BUTTON_1)
-   - Priority: 1
-   - Stack: 256 words
-
-### CPU1 Tasks
-1. **LED1 Task** (`task_app_led1`)
-   - **File**: `App_Cpu1.c:58`
-   - Blinks LED1 every 250ms
-   - **Waits for binary semaphore before each blink**
-   - **Controlled by button task on CPU0**
-   - Pin: P00.5 (LED_1)
-   - Priority: 1
-   - Stack: 256 words
-
-### CPU2 Tasks
-1. **LED2 Task** (`task_app_led2`)
-   - **File**: `App_Cpu2.c:102`
-   - Interrupt-driven LED toggle
-   - Triggered by button press (ERU interrupt on P33.7)
-   - **Checks binary semaphore before toggling LED**
-   - **Controlled by button task on CPU0**
-   - Pin: P00.6 (LED_2)
-   - Priority: 1
-   - Stack: 256 words
-   - **Interrupt**: ERU interrupt routed to CPU2
-
-## Inter-Core Communication
-
-### Current Implementation
-- **CPU0**: Button state monitoring, debouncing, and LED control via binary semaphore
-- **CPU1**: LED1 control synchronized with CPU0 via binary semaphore
-- **CPU2**: LED2 control with ERU interrupt handling, synchronized with CPU0 via binary semaphore
-- **Synchronized operation**: Binary semaphore provides inter-core synchronization for LED control
-
-### Binary Semaphore Control
-- **Semaphore**: `g_ledControlSemaphore` (created on CPU0)
-- **Initial State**: LEDs start running (semaphore given)
-- **Button Control**: Each button press toggles LED operation (start/stop)
-- **LED Tasks**: Both LED tasks wait for semaphore before operation
+**Task Summary:**
+- **CPU0:** System boot, button polling, and LED enable logic. Polls BUTTON_0 and sets enable flags for LED1 and LED2.
+- **CPU1:** LED1 control. Toggles LED_1 in a 100ms periodic task, but only when enabled by CPU0's flag.
+- **CPU2:** LED2 control. Toggles LED_2 in a 1000ms periodic task, but only when enabled by CPU0's flag.
+- **Inter-core sync:** LED enable/disable is controlled via boolean flags set by CPU0's button handler
 
 ### Potential Enhancements
 For more complex applications, consider:
@@ -103,8 +48,8 @@ All cores operate at:
 
 ### Compiler Flags
 Ensure the following preprocessor definitions are set:
-- For CPU1 builds: Include `FreeRTOSConfig_CPU1.h`
-- For CPU2 builds: Include `FreeRTOSConfig_CPU2.h`
+- For CPU1 builds: Include `FreeRTOSConfig1.h`
+- For CPU2 builds: Include `FreeRTOSConfig2.h`
 - Each core requires separate compilation units
 
 ### Memory Layout
@@ -156,9 +101,7 @@ The updated linker script (`Lcf_Gnuc_Tricore_Tc.lsl`) provides:
 
 ### Error Handling
 Each core has its own stack overflow hook:
-- `vApplicationStackOverflowHook()` - CPU0 (in Cpu0_Main.c)
-- `vApplicationStackOverflowHook_CPU1()` - CPU1 (in App_Cpu1.c)
-- `vApplicationStackOverflowHook_CPU2()` - CPU2 (in App_Cpu2.c)
+- `vApplicationStackOverflowHook()` - **Global FreeRTOS stack overflow hook, implemented only in Cpu0_Main.c**
 
 ## Troubleshooting
 
@@ -188,5 +131,10 @@ Each core has its own stack overflow hook:
 - Ethernet processing on separate core
 - Safety-critical tasks isolation
 - Real-time signal processing distribution
+
+---
+
+## Legacy Documentation
+See `README_LEGACY.md` for details on previous single-core and older multi-core demo implementations. Some function and file names may differ from the current codebase.
 
 This multi-core FreeRTOS implementation provides a foundation for complex, distributed real-time applications on the AURIX™ TC375 platform.
