@@ -58,8 +58,8 @@ extern SemaphoreHandle_t g_cpu2TickSem;            /* Counting semaphore for CPU
 #define BUTTON_DEBOUNCE_COUNT   (5)                /* Number of consecutive readings for debouncing                */
 
 /* System-wide Boolean Flags */
-bool LED1_ENABLE_FLAG = FALSE;
-bool LED2_ENABLE_FLAG = FALSE;
+extern volatile bool LED1_ENABLE_FLAG;
+extern volatile bool LED2_ENABLE_FLAG;
 
 /*********************************************************************************************************************/
 /*------------------------------------------------- CPU0 Section ---------------------------------------------------*/

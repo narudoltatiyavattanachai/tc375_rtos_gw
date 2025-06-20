@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include "App_Config.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
@@ -13,3 +14,6 @@ SemaphoreHandle_t g_cpu1TickSem = NULL;
 /* Global semaphores for CPU2 */
 SemaphoreHandle_t g_cpu2InitSem = NULL;
 SemaphoreHandle_t g_cpu2TickSem = NULL;
+
+volatile bool LED1_ENABLE_FLAG = false;
+volatile bool LED2_ENABLE_FLAG = false;
