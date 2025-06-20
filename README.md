@@ -18,6 +18,14 @@ This project demonstrates a minimal multi-core FreeRTOS setup for the Infineon A
 - **CPU2:** LED2 control. Toggles LED_2 in a 1000ms periodic task, but only when enabled by CPU0's flag.
 - **Inter-core sync:** LED enable/disable is controlled via boolean flags set by CPU0's button handler
 
+### Typical AURIX TC375 Core Partitioning
+
+| Core  | Typical Domain                                             |
+|-------|------------------------------------------------------------|
+| CPU0  | Boot, OS kernel, safety manager, watchdog                  |
+| CPU1  | Real-time control, time-critical logic                     |
+| CPU2  | Networking, diagnostics, logging, less time-critical tasks |
+
 ### Potential Enhancements
 For more complex applications, consider:
 1. **Inter-Core Message Passing**: Communication between CPU cores
