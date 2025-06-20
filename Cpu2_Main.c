@@ -70,12 +70,3 @@ void core2_main(void)
         __nop();
     }
 }
-
-/* Required FreeRTOS callback for CPU2, called in case of a stack overflow */
-void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
-{
-    while (1)
-    {
-        __nop();
-    }
-}
