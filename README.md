@@ -1,86 +1,192 @@
-<img src="./Images/IFX_LOGO_600.gif" align="right" width="150"/>  
+# Multi-Core FreeRTOS Implementation for TC375
 
-# iLLD_TC375_ADS_FreeRTOS_Basic  
-**This example shows how to get started with using the AURIX™ FreeRTOS port**
+## Overview
+This project has been enhanced to support FreeRTOS running on all three CPU cores of the AURIX™ TC375 microcontroller. Each CPU core runs its own independent FreeRTOS scheduler with dedicated tasks.
 
-## Device  
-The device used in this example is AURIX™ TC37xTP_A-Step
+## Architecture
 
-## Board  
-The board used for testing is the AURIX™ TC375 lite kit V2 (KIT_A2G_TC375_LITE)
+### CPU Core Assignments
+- **CPU0**: Button handling core with button polling task
+- **CPU1**: LED1 control task
+- **CPU2**: LED2 control task with interrupt handling
 
-## Scope of work
-This example explores FreeRTOS usage on AURIX™ TC375 using two simple tasks and one interrupt
+### FreeRTOS Configuration
+Each CPU core has its own FreeRTOS configuration file:
+- `Configurations/FreeRTOSConfig.h` - CPU0 (original)
+- `Configurations/FreeRTOSConfig_CPU1.h` - CPU1 specific
+- `Configurations/FreeRTOSConfig_CPU2.h` - CPU2 specific
 
-## Introduction  
-- One task toggles LED1 every 250ms
-- LED2 is toggled when a BUTTON1 is pressed
-    - A task waits indefinitely for a notification and then toggles an LED2
-    - BUTTON1 triggers an interrupt and the corresponding ISR then notifies the task
+### Memory Allocation
+The linker script has been updated with increased memory allocations:
+- **User Stack**: 4KB per CPU (increased from 2KB)
+- **Interrupt Stack**: 2KB per CPU (increased from 1KB)
+- **Heap**: 8KB shared (increased from 4KB)
+- **FreeRTOS Heap**: 32KB per CPU core
 
-## Hardware setup 
-This code example has been developed for the AURIX™ TC375 lite kit V2.<br>
-<img src="./Images/LiteKit_V2_Top.png" width="600"/>
+## Task Distribution
 
-The button (BUTTON1) is connected to P00.7, which cannot generate an external interrupt. So, on the X2 header on the bottom side of the lite kit, `P00.7` needs to be connected to `P33.7`, which *can* trigger an external interrupt. BUTTON1 can now be used to trigger an external interrupt when P33.7 is configured as the interrupt source.
+### CPU0 Tasks
+1. **Button Task** (`task_app_button`)
+   - **File**: `App_Cpu0.c:59`
+   - Polls button state on P00.7 every 50ms
+   - Implements debouncing with 5 consecutive readings
+   - Maintains button press counter
+   - **Controls LED operation via binary semaphore**
+   - **Toggles LED start/stop on each button press**
+   - Pin: P00.7 (BUTTON_1)
+   - Priority: 1
+   - Stack: 256 words
 
-For more details about ERU configuration, please refer to the **AURIX™ User Manual** or the "**ERU_Interrupt_1 for KIT_AURIX_TC375_LK**" code example; the corresponding links are provided in the *References* section.<br>
-<img src="./Images/LiteKit_V2_X2_Header.png" width="350"/>
-&nbsp;&nbsp;&nbsp;
-<img src="./Images/LiteKit_V2_Bottom.png" width="650"/>  
-<br>
-<img src="./Images/LiteKit_X2_Connection_Pic.png" width="650"/>
+### CPU1 Tasks
+1. **LED1 Task** (`task_app_led1`)
+   - **File**: `App_Cpu1.c:58`
+   - Blinks LED1 every 250ms
+   - **Waits for binary semaphore before each blink**
+   - **Controlled by button task on CPU0**
+   - Pin: P00.5 (LED_1)
+   - Priority: 1
+   - Stack: 256 words
 
-## Implementation
-**Startup software:**
-- The code initializes the device through the Startup software libraries provided by the iLLDs (Infineon Low Level Driver)
-- Core0 executes this code example, including FreeRTOS and the tasks for the "*app*" for each LED
-- Core1 and core2 are then running into an empty infinite while loop
+### CPU2 Tasks
+1. **LED2 Task** (`task_app_led2`)
+   - **File**: `App_Cpu2.c:102`
+   - Interrupt-driven LED toggle
+   - Triggered by button press (ERU interrupt on P33.7)
+   - **Checks binary semaphore before toggling LED**
+   - **Controlled by button task on CPU0**
+   - Pin: P00.6 (LED_2)
+   - Priority: 1
+   - Stack: 256 words
+   - **Interrupt**: ERU interrupt routed to CPU2
 
-**The example works as follows...**
+## Inter-Core Communication
 
-- The following FreeRTOS tasks and interrupts are used:
-    1. **APP LED1**  
-            - Task function: `task_app_led1(..)` in `App_Led1.c`  
-            - The `app_init(..)` function is called before the task enters its infinite loop. Initialization of P00.5 as an output for driving LED1 is done here
-            - Inside the infinite loop, LED1 is toggled once every 250ms
-    2. **APP LED2**  
-            - Task function: `task_app_led2` in `App_Led2.c`  
-            - The `app_init(..)` function is called before the task enters its infinite loop. Initialization of P00.6 as an output for driving the LED2 is done here. Additionally, the initialization of an ERU interrupt for input P33.7 is also configured here. Only falling edge detection is enabled, so the interrupt will be triggered only when BUTTON1 is pressed (release has no effect)  
-            - Inside the infinite loop, waits indefinitely for a task notification for ERU ISR
-    3. **ERU Int0 ISR**  
-            - `SCUERU_Int0_Handler` in `App_Led2.c`  
-            - Triggered when BUTTON1 is pressed. Sends a task notification to the "APP LED2" task then yields from the ISR
+### Current Implementation
+- **CPU0**: Button state monitoring, debouncing, and LED control via binary semaphore
+- **CPU1**: LED1 control synchronized with CPU0 via binary semaphore
+- **CPU2**: LED2 control with ERU interrupt handling, synchronized with CPU0 via binary semaphore
+- **Synchronized operation**: Binary semaphore provides inter-core synchronization for LED control
 
-## Run and Test
-- Compile the code using the **Build Active Project** button (<img src="./Images/build_activeproj.gif"/>) in the toolbar or by right-clicking the project name and selecting "Build Project" (this code example _has_ to be the active project)
-- Connect the lite kit to the PC using a micro-USB cable
-- Click the **Debug Active Project** button (<img src="./Images/debug_activeproj.gif"/>) to flash and debug the project
+### Binary Semaphore Control
+- **Semaphore**: `g_ledControlSemaphore` (created on CPU0)
+- **Initial State**: LEDs start running (semaphore given)
+- **Button Control**: Each button press toggles LED operation (start/stop)
+- **LED Tasks**: Both LED tasks wait for semaphore before operation
 
-Once the debugger opens, the code will stop at a default startup breakpoint, click <img src="./Images/debug_resume.gif"/> or press F8 to continue. LED1 should start blinking with a period of 250ms and pressing BUTTON1 should toggle the state of LED2.
+### Potential Enhancements
+For more complex applications, consider:
+1. **Inter-Core Message Passing**: Communication between CPU cores
+2. **Shared Resource Management**: When multiple cores need to access the same hardware
+3. **Load Balancing**: Dynamic task distribution based on CPU utilization
+4. **Cross-Core Synchronization**: For coordinated multi-core operations
 
-## References  
+## Hardware Configuration
 
-AURIX™ Development Studio is available online:  
-- <https://www.infineon.com/aurixdevelopmentstudio>  
-- Use the "Import..." function to get access to more code examples  
+### System Timers (STM)
+Each CPU core uses its own STM module:
+- **CPU0**: STM0 (0xF0001000)
+- **CPU1**: STM1 (0xF0001100)
+- **CPU2**: STM2 (0xF0001200)
 
-AURIX™ TC3xx User Manual:
-- Part 1: <https://www.infineon.com/dgdl/Infineon-AURIX_TC3xx_Part1-UserManual-v02_00-EN.pdf?fileId=5546d462712ef9b701717d3605221d96>
-- Part 2: <https://www.infineon.com/dgdl/Infineon-AURIX_TC3xx_Part2-UserManual-v02_00-EN.pdf?fileId=5546d462712ef9b701717d35f8541d94>
+### Interrupt Sources
+- **CPU0**: SRC address 0xF0038990
+- **CPU1**: SRC address 0xF0038998
+- **CPU2**: SRC address 0xF00389A0
 
-ERU_Interrupt_1 for KIT_AURIX_TC375_LK code example:
-- <https://www.infineon.com/dgdl/Infineon-ERU_Interrupt_1_KIT_TC375_LK-Training-v01_00-EN.pdf?fileId=5546d4627883d7e00178a2b1b5053878>
+### Clock Configuration
+All cores operate at:
+- **CPU Clock**: 300 MHz
+- **STM Clock**: 100 MHz
+- **Tick Rate**: 1000 Hz (1ms tick)
 
-FreeRTOS Quick Start Guide:
-- <https://www.freertos.org/FreeRTOS-quick-start-guide.html>
+## Build Configuration
 
-More code examples can be found on the GIT repository:  
-- <https://github.com/Infineon/AURIX_code_examples>  
+### Compiler Flags
+Ensure the following preprocessor definitions are set:
+- For CPU1 builds: Include `FreeRTOSConfig_CPU1.h`
+- For CPU2 builds: Include `FreeRTOSConfig_CPU2.h`
+- Each core requires separate compilation units
 
-For additional trainings, visit our webpage:  
-- <https://www.infineon.com/aurix-expert-training>  
+### Memory Layout
+The updated linker script (`Lcf_Gnuc_Tricore_Tc.lsl`) provides:
+- Separate memory regions for each CPU core
+- Increased stack sizes for FreeRTOS operation
+- Proper interrupt vector table placement
 
-For questions and support, use the AURIX™ Forum:  
-- <https://community.infineon.com/t5/AURIX/bd-p/AURIX>  
+## Testing and Verification
 
+### Expected Behavior
+1. **Button**: CPU0 polls button state every 50ms with debouncing (P00.7)
+2. **LED Control**: Button press toggles LED operation (start/stop)
+3. **LED1**: Blinks at 250ms intervals when enabled (controlled by CPU1 + semaphore)
+4. **LED2**: Toggles on button press only when enabled (controlled by CPU2 + semaphore)
+5. **Initial State**: LEDs start running by default
+6. **System**: All three cores coordinate via binary semaphore
+
+### Debug Points
+1. Verify each CPU starts its FreeRTOS scheduler successfully
+2. Check button task creation and polling on CPU0
+3. Check LED1 task creation and execution on CPU1
+4. Check LED2 task creation and execution on CPU2
+5. Verify ERU interrupt routing to CPU2
+6. Test button press functionality and counter increment
+7. **Verify semaphore creation and initial state**
+8. **Test LED start/stop toggle functionality**
+9. **Confirm both LEDs stop/start together**
+
+### Performance Monitoring
+- Monitor button polling responsiveness on CPU0
+- Monitor LED1 blink timing to verify CPU1 task execution
+- Test button responsiveness to verify CPU2 interrupt handling
+- Use debugger to verify task states on each core
+- Check button press counter using `get_button_press_count()` function
+
+## Development Guidelines
+
+### Adding New Tasks
+1. Determine appropriate CPU core based on task requirements
+2. Include the correct FreeRTOS configuration header
+3. Ensure adequate stack size allocation
+4. Consider inter-core synchronization needs
+
+### Resource Management
+- LED1 and LED2 are now controlled by separate CPUs (no sharing)
+- Each CPU has dedicated hardware resources
+- Implement synchronization only when cores need to communicate
+
+### Error Handling
+Each core has its own stack overflow hook:
+- `vApplicationStackOverflowHook()` - CPU0 (in Cpu0_Main.c)
+- `vApplicationStackOverflowHook_CPU1()` - CPU1 (in App_Cpu1.c)
+- `vApplicationStackOverflowHook_CPU2()` - CPU2 (in App_Cpu2.c)
+
+## Troubleshooting
+
+### Common Issues
+1. **Core doesn't start**: Check CPU sync event synchronization
+2. **Button not responding**: Verify CPU0 button task creation and pin configuration
+3. **LED1 doesn't blink**: Verify CPU1 scheduler and task creation
+4. **LED2 doesn't respond to button**: Check ERU interrupt routing to CPU2
+5. **Stack overflow**: Increase task stack sizes in `xTaskCreate()` calls
+
+### Debug Tools
+- Use AURIX Development Studio debugger
+- Set breakpoints in each core's main function
+- Monitor task states using FreeRTOS-aware debugging
+- Check memory usage in each core's dedicated DSPR
+
+## Future Enhancements
+
+### Recommended Additions
+1. **Message Passing Framework**: Implement robust inter-core communication
+2. **Load Balancing**: Dynamic task distribution based on CPU load
+3. **Fault Tolerance**: Implement watchdog and error recovery mechanisms
+4. **Power Management**: Optimize core usage for power efficiency
+
+### Integration Possibilities
+- CAN bus communication handling on dedicated core
+- Ethernet processing on separate core
+- Safety-critical tasks isolation
+- Real-time signal processing distribution
+
+This multi-core FreeRTOS implementation provides a foundation for complex, distributed real-time applications on the AURIX™ TC375 platform.

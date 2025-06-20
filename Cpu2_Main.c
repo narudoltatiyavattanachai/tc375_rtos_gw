@@ -28,6 +28,15 @@
 #include "IfxCpu.h"
 #include "IfxScuWdt.h"
 
+/* Include CPU2 specific FreeRTOS configuration */
+#define FREERTOS_CONFIG_H_INCLUDE_GUARD
+#include "FreeRTOSConfig2.h"
+#undef FREERTOS_CONFIG_H_INCLUDE_GUARD
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "App_Config.h"
+
 extern IfxCpu_syncEvent g_cpuSyncEvent;
 
 void core2_main(void)
@@ -43,7 +52,30 @@ void core2_main(void)
     IfxCpu_emitEvent(&g_cpuSyncEvent);
     IfxCpu_waitEvent(&g_cpuSyncEvent, 1);
     
+    /* Create init task on CPU2 */
+    xTaskCreate(task_cpu2_init, "INIT CPU2", CPU2_INIT_TASK_STACK, NULL, CPU2_INIT_TASK_PRIORITY, NULL);
+    
+    /* Create placeholder tasks on CPU2 */
+    xTaskCreate(task_cpu2_1ms, "CPU2 1MS", CPU2_1MS_TASK_STACK, NULL, CPU2_1MS_TASK_PRIORITY, NULL);
+    xTaskCreate(task_cpu2_10ms, "CPU2 10MS", CPU2_10MS_TASK_STACK, NULL, CPU2_10MS_TASK_PRIORITY, NULL);
+    xTaskCreate(task_cpu2_100ms, "CPU2 100MS", CPU2_100MS_TASK_STACK, NULL, CPU2_100MS_TASK_PRIORITY, NULL);
+    xTaskCreate(task_cpu2_1000ms, "CPU2 1000MS", CPU2_1000MS_TASK_STACK, NULL, CPU2_1000MS_TASK_PRIORITY, NULL);
+    
+    /* Start the FreeRTOS scheduler on CPU2 */
+    vTaskStartScheduler();
+    
+    /* Should never reach here if scheduler starts successfully */
     while(1)
     {
+        __nop();
+    }
+}
+
+/* Required FreeRTOS callback for CPU2, called in case of a stack overflow */
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+    while (1)
+    {
+        __nop();
     }
 }

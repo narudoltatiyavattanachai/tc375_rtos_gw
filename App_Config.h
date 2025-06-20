@@ -34,18 +34,104 @@
 #include "Ifx_Types.h"
 #include "IfxPort_PinMap.h"
 #include "Port/Io/IfxPort_Io.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
 
 /*********************************************************************************************************************/
-/*-----------------------------------------------------Macros--------------------------------------------------------*/
+/*--------------------------------------------- Generic System Setup -----------------------------------------------*/
 /*********************************************************************************************************************/
-#define LED_1                   IfxPort_P00_5       /* Port/Pin for LED 1                                            */
-#define LED_2                   IfxPort_P00_6       /* Port/Pin for LED 2                                            */
-#define BUTTON_1                IfxPort_P00_7       /* Port/Pin for BUTTION 1 - Not directly used in this example    */
+
+/* Hardware Pin Definitions */
+#define BUTTON_0                IfxPort_P00_7       /* Port/Pin for BUTTON 0 - Monitored by CPU0                    */
+#define LED_1                   IfxPort_P00_5       /* Port/Pin for LED 1 - Controlled by CPU1                      */
+#define LED_2                   IfxPort_P00_6       /* Port/Pin for LED 2 - Controlled by CPU2                      */
+
+/* Global Synchronization Objects */
+extern SemaphoreHandle_t g_cpu0InitSem;            /* Binary semaphore for CPU0 initialization synchronization    */
+extern SemaphoreHandle_t g_cpu0TickSem;            /* Counting semaphore for CPU0 task tick synchronization       */
+extern SemaphoreHandle_t g_cpu1InitSem;            /* Binary semaphore for CPU1 initialization synchronization    */
+extern SemaphoreHandle_t g_cpu1TickSem;            /* Counting semaphore for CPU1 task tick synchronization       */
+extern SemaphoreHandle_t g_cpu2InitSem;            /* Binary semaphore for CPU2 initialization synchronization    */
+extern SemaphoreHandle_t g_cpu2TickSem;            /* Counting semaphore for CPU2 task tick synchronization       */
+
+/* System-wide Configuration */
+#define BUTTON_DEBOUNCE_COUNT   (5)                /* Number of consecutive readings for debouncing                */
+
+/* System-wide Boolean Flags */
+bool LED1_ENABLE_FLAG = FALSE;
+bool LED2_ENABLE_FLAG = FALSE;
 
 /*********************************************************************************************************************/
-/*------------------------------------------------Function Prototypes------------------------------------------------*/
+/*------------------------------------------------- CPU0 Section ---------------------------------------------------*/
 /*********************************************************************************************************************/
-void task_app_led1(void *arg);
-void task_app_led2(void *arg);
+/* CPU0 is responsible for button handling and LED control coordination */
+
+/* CPU0 Task Functions */
+void task_cpu0_init(void *arg);                    /* CPU0 initialization task running at 1ms                     */
+void task_cpu0_1ms(void *arg);                     /* CPU0 1ms placeholder task                                    */
+void task_cpu0_10ms(void *arg);                    /* CPU0 10ms placeholder task                                   */
+void task_cpu0_100ms(void *arg);                   /* CPU0 100ms placeholder task                                  */
+void task_cpu0_1000ms(void *arg);                  /* CPU0 1000ms placeholder task                                 */
+
+
+/* CPU0 Configuration */
+#define CPU0_INIT_TASK_PRIORITY     (2)            /* Priority for CPU0 init task                                  */
+#define CPU0_INIT_TASK_STACK        (configMINIMAL_STACK_SIZE)  /* Stack size for CPU0 init task            */
+#define CPU0_1MS_TASK_PRIORITY      (3)            /* Priority for CPU0 1ms task                                   */
+#define CPU0_1MS_TASK_STACK         (configMINIMAL_STACK_SIZE)  /* Stack size for CPU0 1ms task             */
+#define CPU0_10MS_TASK_PRIORITY     (4)            /* Priority for CPU0 10ms task                                  */
+#define CPU0_10MS_TASK_STACK        (configMINIMAL_STACK_SIZE)  /* Stack size for CPU0 10ms task            */
+#define CPU0_100MS_TASK_PRIORITY    (5)            /* Priority for CPU0 100ms task                                 */
+#define CPU0_100MS_TASK_STACK       (configMINIMAL_STACK_SIZE)  /* Stack size for CPU0 100ms task           */
+#define CPU0_1000MS_TASK_PRIORITY   (6)            /* Priority for CPU0 1000ms task                                */
+#define CPU0_1000MS_TASK_STACK      (configMINIMAL_STACK_SIZE)  /* Stack size for CPU0 1000ms task          */
+
+/*********************************************************************************************************************/
+/*------------------------------------------------- CPU1 Section ---------------------------------------------------*/
+/*********************************************************************************************************************/
+/* CPU1 is responsible for LED1 control */
+
+/* CPU1 Task Functions */
+void task_cpu1_init(void *arg);                    /* CPU1 initialization task running at 1ms                     */
+void task_cpu1_1ms(void *arg);                     /* CPU1 1ms placeholder task                                    */
+void task_cpu1_10ms(void *arg);                    /* CPU1 10ms placeholder task                                   */
+void task_cpu1_100ms(void *arg);                   /* CPU1 100ms placeholder task                                  */
+void task_cpu1_1000ms(void *arg);                  /* CPU1 1000ms placeholder task                                 */
+
+/* CPU1 Configuration */
+#define CPU1_INIT_TASK_PRIORITY     (2)            /* Priority for CPU1 init task                                  */
+#define CPU1_INIT_TASK_STACK        (configMINIMAL_STACK_SIZE)  /* Stack size for CPU1 init task            */
+#define CPU1_1MS_TASK_PRIORITY      (3)            /* Priority for CPU1 1ms task                                   */
+#define CPU1_1MS_TASK_STACK         (configMINIMAL_STACK_SIZE)  /* Stack size for CPU1 1ms task             */
+#define CPU1_10MS_TASK_PRIORITY     (4)            /* Priority for CPU1 10ms task                                  */
+#define CPU1_10MS_TASK_STACK        (configMINIMAL_STACK_SIZE)  /* Stack size for CPU1 10ms task            */
+#define CPU1_100MS_TASK_PRIORITY    (5)            /* Priority for CPU1 100ms task                                 */
+#define CPU1_100MS_TASK_STACK       (configMINIMAL_STACK_SIZE)  /* Stack size for CPU1 100ms task           */
+#define CPU1_1000MS_TASK_PRIORITY   (6)            /* Priority for CPU1 1000ms task                                */
+#define CPU1_1000MS_TASK_STACK      (configMINIMAL_STACK_SIZE)  /* Stack size for CPU1 1000ms task          */
+
+/*********************************************************************************************************************/
+/*------------------------------------------------- CPU2 Section ---------------------------------------------------*/
+/*********************************************************************************************************************/
+/* CPU2 is responsible for LED2 control with interrupt handling */
+
+/* CPU2 Task Functions */
+void task_cpu2_init(void *arg);                    /* CPU2 initialization task running at 1ms                     */
+void task_cpu2_1ms(void *arg);                     /* CPU2 1ms placeholder task                                    */
+void task_cpu2_10ms(void *arg);                    /* CPU2 10ms placeholder task                                   */
+void task_cpu2_100ms(void *arg);                   /* CPU2 100ms placeholder task                                  */
+void task_cpu2_1000ms(void *arg);                  /* CPU2 1000ms placeholder task                                 */
+
+/* CPU2 Configuration */
+#define CPU2_INIT_TASK_PRIORITY     (2)            /* Priority for CPU2 init task                                  */
+#define CPU2_INIT_TASK_STACK        (configMINIMAL_STACK_SIZE)  /* Stack size for CPU2 init task            */
+#define CPU2_1MS_TASK_PRIORITY      (3)            /* Priority for CPU2 1ms task                                   */
+#define CPU2_1MS_TASK_STACK         (configMINIMAL_STACK_SIZE)  /* Stack size for CPU2 1ms task             */
+#define CPU2_10MS_TASK_PRIORITY     (4)            /* Priority for CPU2 10ms task                                  */
+#define CPU2_10MS_TASK_STACK        (configMINIMAL_STACK_SIZE)  /* Stack size for CPU2 10ms task            */
+#define CPU2_100MS_TASK_PRIORITY    (5)            /* Priority for CPU2 100ms task                                 */
+#define CPU2_100MS_TASK_STACK       (configMINIMAL_STACK_SIZE)  /* Stack size for CPU2 100ms task           */
+#define CPU2_1000MS_TASK_PRIORITY   (6)            /* Priority for CPU2 1000ms task                                */
+#define CPU2_1000MS_TASK_STACK      (configMINIMAL_STACK_SIZE)  /* Stack size for CPU2 1000ms task          */
 
 #endif /* APP_CONFIG_H_ */

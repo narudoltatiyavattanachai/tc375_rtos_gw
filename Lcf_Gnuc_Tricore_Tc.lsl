@@ -33,18 +33,18 @@ ENTRY(_START)
 __TRICORE_DERIVATE_MEMORY_MAP__ = 0x380;
 
 LCF_CSA0_SIZE = 8k;
-LCF_USTACK0_SIZE = 2k;
-LCF_ISTACK0_SIZE = 1k;
+LCF_USTACK0_SIZE = 4k;  /* Increased double size for FreeRTOS */
+LCF_ISTACK0_SIZE = 2k;  /* Increased double size for FreeRTOS */
 
 LCF_CSA1_SIZE = 8k;
-LCF_USTACK1_SIZE = 2k;
-LCF_ISTACK1_SIZE = 1k;
+LCF_USTACK1_SIZE = 4k;  /* Increased double size for FreeRTOS */
+LCF_ISTACK1_SIZE = 2k;  /* Increased double size for FreeRTOS */
 
 LCF_CSA2_SIZE = 8k;
-LCF_USTACK2_SIZE = 2k;
-LCF_ISTACK2_SIZE = 1k;
+LCF_USTACK2_SIZE = 4k;  /* Increased double size for FreeRTOS */
+LCF_ISTACK2_SIZE = 2k;  /* Increased double size for FreeRTOS */
 
-LCF_HEAP_SIZE = 4k;
+LCF_HEAP_SIZE = 8k;     /* Increased double size for FreeRTOS - shared by all CPUs */
 
 LCF_DSPR2_START = 0x50000000;
 LCF_DSPR2_SIZE = 96k;
