@@ -60,6 +60,12 @@
 /* AURIX TCxxx definitions for CPU1 */
 #define configCONTEXT_INTERRUPT_PRIORITY    1 
 #define configTIMER_INTERRUPT_PRIORITY      2 /* This value must not be bigger then context priority */
+#ifdef configCPU_NR
+#undef configCPU_NR
+#endif
+#ifdef configCONTEXT_SRC
+#undef configCONTEXT_SRC
+#endif
 #define configCPU_NR                        1  /* CPU1 specific */
 #define configPROVIDE_SYSCALL_TRAP          0
 #define configSYSCALL_CALL_DEPTH            2
