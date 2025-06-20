@@ -29,7 +29,7 @@
 /*-----------------------------------------------------Includes------------------------------------------------------*/
 /*********************************************************************************************************************/
 #define FREERTOS_CONFIG_H_INCLUDE_GUARD
-#include "Configurations/FreeRTOSConfig_CPU1.h"
+#include "FreeRTOSConfig1.h"
 #undef FREERTOS_CONFIG_H_INCLUDE_GUARD
 
 #include "FreeRTOS.h"

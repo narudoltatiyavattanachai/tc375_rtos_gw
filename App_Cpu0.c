@@ -60,7 +60,7 @@ void task_cpu0_init(void *arg)
         /* Setup the port/pin connected to BUTTON1 as input with pull-up resistor
          * Purpose: Configure BUTTON1 pin (P00.7) as input to read button state
          */
-         IfxPort_setPinMode(BUTTON_1.port, BUTTON_1.pinIndex, IfxPort_Mode_inputPullUp);
+         IfxPort_setPinMode(BUTTON_0.port, BUTTON_0.pinIndex, IfxPort_Mode_inputPullUp);
 
         }
         
@@ -78,8 +78,7 @@ void task_cpu0_1ms(void *arg)
         if (xSemaphoreTake(g_cpu0TickSem, portMAX_DELAY) == pdTRUE)
         {
             /* Placeholder for 1ms task functionality */
-            app_cpu0_button();
-            
+
             /* Give semaphore back before finishing */
             xSemaphoreGive(g_cpu0TickSem);
         }
@@ -184,7 +183,7 @@ void app_cpu0_button(void)
             debounce_counter = 0; /* Reset to prevent multiple counts */
             
             /* Button press confirmed - give tick semaphore to allow LED tasks to proceed */
-            g_button_press_count++;
+            //g_button_press_count++;
                     
             /* Give signal to toggle CPU1 and CPU2 LED tasks */
             LED1_ENABLE_FLAG = !LED1_ENABLE_FLAG;

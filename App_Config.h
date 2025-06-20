@@ -37,6 +37,11 @@
 #include "FreeRTOS.h"
 #include "semphr.h"
 
+#include <stdio.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+
 /*********************************************************************************************************************/
 /*--------------------------------------------- Generic System Setup -----------------------------------------------*/
 /*********************************************************************************************************************/
@@ -64,7 +69,8 @@ extern volatile bool LED2_ENABLE_FLAG;
 /*********************************************************************************************************************/
 /*------------------------------------------------- CPU0 Section ---------------------------------------------------*/
 /*********************************************************************************************************************/
-/* CPU0 is responsible for button handling and LED control coordination */
+/* Function prototypes */
+void app_cpu0_button(void);
 
 /* CPU0 Task Functions */
 void task_cpu0_init(void *arg);                    /* CPU0 initialization task running at 1ms                     */
@@ -89,7 +95,10 @@ void task_cpu0_1000ms(void *arg);                  /* CPU0 1000ms placeholder ta
 /*********************************************************************************************************************/
 /*------------------------------------------------- CPU1 Section ---------------------------------------------------*/
 /*********************************************************************************************************************/
-/* CPU1 is responsible for LED1 control */
+
+/* Function prototypes */
+void app_cpu1_led(void);
+
 
 /* CPU1 Task Functions */
 void task_cpu1_init(void *arg);                    /* CPU1 initialization task running at 1ms                     */
@@ -113,7 +122,9 @@ void task_cpu1_1000ms(void *arg);                  /* CPU1 1000ms placeholder ta
 /*********************************************************************************************************************/
 /*------------------------------------------------- CPU2 Section ---------------------------------------------------*/
 /*********************************************************************************************************************/
-/* CPU2 is responsible for LED2 control with interrupt handling */
+
+/* Function prototypes */
+void app_cpu2_led(void);
 
 /* CPU2 Task Functions */
 void task_cpu2_init(void *arg);                    /* CPU2 initialization task running at 1ms                     */
