@@ -41,34 +41,16 @@ extern uint32_t cpu1_tick_counter;
 /* CPU1 LED2 ON control with local process management */
 void app_cpu1_led2on(void)
 {
-    /* CPU1 LED2 ON control with local state management */
-    if ((cpu1_tick_counter % 100000000) == 0)
+    /* CPU1 LED2 ON control - Turn ON every full second (when counter hits multiples of LED2_BLINK_PERIOD*2) */
+    if (LED_PROCESS_ACTIVE && (cpu1_tick_counter % (LED2_BLINK_PERIOD * 2)) == 0)
     {
-        cpu1_tick_counter++;
+        /* CPU1 turns LED2 ON for 500ms */
+        IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_low);
+        cpu1_loop_count++;
         
-        /* CPU1 monitors LED_PROCESS_ACTIVE for initialization */
-        if (LED_PROCESS_ACTIVE)
-        {
-            /* Initialize CPU1 for new LED process cycle */
-            CPU1_EXECUTION_PROCESS = true;       /* CPU1 starts first */
-            CPU1_DATA_READY = false;
-            
-            CPU2_DATA_READY = false;            /*Set CPU2 data as outdated*/
-        }
-        
-        /* CPU1 execution conditions: LED process active AND CPU1 ready AND CPU2 not complete */
-        if (CPU1_EXECUTION_PROCESS)
-        {
-
-            /* CPU1 main execution: Turn LED2 ON */
-            IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_low);
-            cpu1_loop_count++;
-
-            /* Initialize CPU1 for new LED process cycle */
-            CPU1_EXECUTION_PROCESS = false;       /* CPU1 starts first */
-            CPU1_DATA_READY = true;
-
-        }
-
+        /* Signal CPU2 to prepare for OFF cycle */
+        CPU1_DATA_READY = true;
+        CPU2_DATA_READY = false;
+        led_process_count++;
     }
 }

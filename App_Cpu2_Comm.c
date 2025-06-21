@@ -38,38 +38,19 @@
 /*********************************************************************************************************************/
 extern uint32_t cpu2_tick_counter;
 
-/* CPU2 communication logic - now empty, all app logic moved to CPU0 */
+/* CPU2 LED2 OFF control with timing coordination */
 void app_cpu2_led2off(void)
 {
-    /* CPU2 LED2 OFF control with balanced state management */
-    if ((cpu2_tick_counter % 100000000) == 0)
+    /* CPU2 LED2 OFF control - Turn OFF after 500ms delay from CPU1 ON signal */
+    if (LED_PROCESS_ACTIVE && CPU1_DATA_READY && (cpu2_tick_counter % LED2_BLINK_PERIOD) == 0)
     {
-        cpu2_tick_counter++;
-
-        /* CPU2 monitors CPU1_DATA_READY for initialization */
-        if (CPU1_DATA_READY)
-        {
-            /* Initialize CPU2 for new LED process cycle */
-            CPU2_EXECUTION_PROCESS = true;
-            CPU2_DATA_READY = false;
-
-            CPU1_DATA_READY = false;            /*Set CPU1 data as outdated*/
-
-        }
-                
-        /* CPU2 execution conditions: LED process active AND CPU2 ready AND CPU1 not complete */
-        if (CPU2_EXECUTION_PROCESS)
-        {
+        /* CPU2 turns LED2 OFF after 500ms delay */
+        IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_high);
+        cpu2_loop_count++;
         
-            /* CPU2 main execution: Turn LED2 OFF */
-            IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_high);
-            cpu2_loop_count++;
-        
-            /* Complete CPU2 execution cycle */
-            CPU2_EXECUTION_PROCESS = false;       /* CPU2 completes after CPU1 */
-            CPU2_DATA_READY = true;
-
-
-        }
+        /* Signal cycle complete */
+        CPU2_DATA_READY = true;
+        CPU1_DATA_READY = false;
+        led_process_count++;
     }
 }
