@@ -36,41 +36,22 @@
 /*********************************************************************************************************************/
 /*-------------------------------------------------Global variables--------------------------------------------------*/
 /*********************************************************************************************************************/
-extern uint32_t cpu1_tick_counter;
+extern uint32_t cpu1_tick_count;
 
-/* CPU1 LED2 ON control with symmetric flag checking */
+/* CPU1 application logic - now empty, all app logic moved to CPU0 */
+
+/* CPU2 communication logic - now empty, all app logic moved to CPU0 */
 void app_cpu1_led2on(void)
 {
-    /* CPU1 LED2 ON control with balanced state management */
-    if ((cpu1_tick_counter % 100000) == 0)
+    /* LED2 ON control - CPU1 turns LED2 on when blink flag is active */
+    if ((cpu1_tick_count % 100000) == 0)
     {
-        cpu1_tick_counter++;
-        
-        /* CPU1 execution conditions: LED process active AND CPU1 ready AND CPU2 not complete */
-        if (LED_PROCESS_ACTIVE && CPU1_EXECUTION_READY && !CPU2_EXECUTION_COMPLETE)
+        cpu1_tick_count++;
+        if (LED2_BLINK_FLAG)
         {
-            /* Pre-execution state management */
-            CPU1_EXECUTION_READY = false;      /* Reset CPU1 ready flag */
-            CPU1_EXECUTION_COMPLETE = false;   /* Reset CPU1 completion flag */
-            
-            /* CPU1 main execution: Turn LED2 ON */
+            /* Turn LED2 ON (active low, so set to low) */
             IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_low);
-            cpu1_loop_count++;
-            
-            /* Post-execution state management */
-            CPU1_EXECUTION_COMPLETE = true;    /* Signal CPU1 has completed */
-            CPU2_EXECUTION_READY = true;       /* Enable CPU2 to start */
-            cpu1_cpu2_sequence_count++;        /* Track successful sequences */
-        }
-        
-        /* CPU1 monitoring: Reset flags when CPU2 completes */
-        if (CPU2_EXECUTION_COMPLETE)
-        {
-            CPU2_EXECUTION_COMPLETE = false;   /* Reset CPU2 completion flag */
-            if (LED_PROCESS_ACTIVE)
-            {
-                CPU1_EXECUTION_READY = true;   /* Ready for next cycle */
-            }
+            led2_cpu1_count++;
         }
     }
 }

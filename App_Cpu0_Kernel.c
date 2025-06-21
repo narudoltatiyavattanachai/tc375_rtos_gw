@@ -45,7 +45,6 @@
 /*-------------------------------------------------Global variables--------------------------------------------------*/
 /*********************************************************************************************************************/
 
-uint32_t cpu0_init_count = 0;
 uint32_t cpu0_1ms_count = 0;
 uint32_t cpu0_10ms_count = 0;
 uint32_t cpu0_100ms_count = 0;
@@ -56,17 +55,9 @@ volatile bool LED1_ENABLE_FLAG = false;
 volatile bool LED2_ENABLE_FLAG = false;
 volatile bool LED2_BLINK_FLAG = false;
 
-/* CPU1/CPU2 looping counters */
-volatile uint32_t cpu1_loop_count = 0;
-volatile uint32_t cpu2_loop_count = 0;
-
-/* Sequential execution control variables */
-volatile bool CPU1_EXECUTION_READY = false;
-volatile bool CPU1_EXECUTION_COMPLETE = false;
-volatile bool CPU2_EXECUTION_READY = false;
-volatile bool CPU2_EXECUTION_COMPLETE = false;
-volatile bool LED_PROCESS_ACTIVE = false;
-volatile uint32_t cpu1_cpu2_sequence_count = 0;
+/* LED2 monitoring counters */
+volatile uint32_t led2_cpu1_count = 0;
+volatile uint32_t led2_cpu2_count = 0;
 
 /* Button state variables for CPU0 task */
 static IfxPort_State previous_button_state = IfxPort_State_high;
@@ -81,9 +72,6 @@ void task_cpu0_init(void *arg)
 {
     while (1)
     {
-        /* Increment init task counter */
-        cpu0_init_count++;
-        
         /* Wait for CPU0 init semaphore */
         //if (xSemaphoreTake(g_cpu0InitSem, portMAX_DELAY) == pdTRUE)
         //{
@@ -104,14 +92,6 @@ void task_cpu0_init(void *arg)
          /* Initialize LED1 pin for CPU0 LED1 control */
          IfxPort_setPinMode(LED_1.port, LED_1.pinIndex, IfxPort_Mode_outputPushPullGeneral);
          IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_high);
-         
-         /* Initialize balanced sequential execution control */
-         LED_PROCESS_ACTIVE = false;        /* Process starts inactive */
-         CPU1_EXECUTION_READY = false;      /* CPU1 not ready initially */
-         CPU1_EXECUTION_COMPLETE = false;   /* CPU1 not completed initially */
-         CPU2_EXECUTION_READY = false;      /* CPU2 not ready initially */
-         CPU2_EXECUTION_COMPLETE = false;   /* CPU2 not completed initially */
-         cpu1_cpu2_sequence_count = 0;      /* Reset sequence counter */
 
         //}
         
@@ -213,24 +193,6 @@ void vApplicationStackOverflowHook_CPU0(TaskHandle_t xTask, char *pcTaskName)
     }
 }
 
-/* Toggle LED1 based on enable flag */
-void app_cpu0_led1(void)
-{
-    if (LED1_ENABLE_FLAG)
-    {
-        IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_toggled);
-    }
-}
-
-/* Toggle LED2 based on enable flag */
-void app_cpu0_led2(void)
-{
-    if (LED2_ENABLE_FLAG)
-    {
-        IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_toggled);
-    }
-}
-
 /* Button handling function */
 void app_cpu0_button(void)
 {
@@ -246,21 +208,8 @@ void app_cpu0_button(void)
         button_debounce_counter++;
         if (button_debounce_counter >= BUTTON_DEBOUNCE_COUNT)
         {
-            /* Button press confirmed - start LED process from CPU1 */
-            if (!LED_PROCESS_ACTIVE)
-            {
-                /* Start LED process: CPU1 first, then CPU2 */
-                LED_PROCESS_ACTIVE = true;
-                CPU1_EXECUTION_READY = true;       /* Enable CPU1 to start */
-                CPU1_EXECUTION_COMPLETE = false;
-                CPU2_EXECUTION_READY = false;      /* CPU2 waits for CPU1 */
-                CPU2_EXECUTION_COMPLETE = false;
-            }
-            else
-            {
-                /* Stop LED process - will complete at CPU2 (LED OFF) */
-                LED_PROCESS_ACTIVE = false;
-            }
+            /* Button press confirmed - toggle LED2 blink flag */
+            LED2_BLINK_FLAG = !LED2_BLINK_FLAG;
             button_debounce_counter = 0;
         }
     }
@@ -270,4 +219,13 @@ void app_cpu0_button(void)
     }
     
     previous_button_state = current_button_state;
+}
+
+/* Toggle LED1 based on enable flag */
+void app_cpu0_led1(void)
+{
+    if (LED1_ENABLE_FLAG)
+    {
+        IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_toggled);
+    }
 }
