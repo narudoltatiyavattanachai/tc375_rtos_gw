@@ -48,7 +48,7 @@ void core2_main(void)
     /* Main bare-metal loop - CPU2 now runs without FreeRTOS */
     while(1)
     {
-        
+        cpu2_tick_counter++;
         app_cpu2_led2off();
         
         /* Simple delay */

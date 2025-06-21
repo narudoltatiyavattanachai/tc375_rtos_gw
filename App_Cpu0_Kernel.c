@@ -100,7 +100,7 @@ void task_cpu0_init(void *arg)
             if (!initialized)
             {
                 /* Initialize LED process control */
-                LED_PROCESS_ACTIVE = false;        /* Process starts inactive */
+                LED_PROCESS_ACTIVE = true;        /* Process starts active */
                 BUTTON_PRESSED_FLAG = false;       /* No button press initially */
                          
                 /* Initialize BUTTON0 */
@@ -116,6 +116,7 @@ void task_cpu0_init(void *arg)
                 
                 initialized = true;
                 xSemaphoreGive(g_cpu0TickSem);
+
             }
         }
         

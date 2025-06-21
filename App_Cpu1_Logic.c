@@ -42,7 +42,7 @@ extern uint32_t cpu1_tick_counter;
 void app_cpu1_led2on(void)
 {
     /* CPU1 LED2 ON control with local state management */
-    if ((cpu1_tick_counter % 100000) == 0)
+    if ((cpu1_tick_counter % 100000000) == 0)
     {
         cpu1_tick_counter++;
         
@@ -68,7 +68,6 @@ void app_cpu1_led2on(void)
             CPU1_EXECUTION_PROCESS = false;       /* CPU1 starts first */
             CPU1_DATA_READY = true;
 
-            led_process_count++;               /* Track LED process cycles */
         }
 
     }

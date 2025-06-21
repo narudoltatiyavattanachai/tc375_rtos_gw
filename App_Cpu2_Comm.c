@@ -42,7 +42,7 @@ extern uint32_t cpu2_tick_counter;
 void app_cpu2_led2off(void)
 {
     /* CPU2 LED2 OFF control with balanced state management */
-    if ((cpu2_tick_counter % 100000) == 0)
+    if ((cpu2_tick_counter % 100000000) == 0)
     {
         cpu2_tick_counter++;
 
@@ -70,7 +70,6 @@ void app_cpu2_led2off(void)
             CPU2_DATA_READY = true;
 
 
-            led_process_count++;               /* Track LED process cycles */
         }
     }
 }
