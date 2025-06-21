@@ -43,6 +43,10 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+/* CPU core main function declarations */
+extern void core1_main(void);
+extern void core2_main(void);
+
 IFX_ALIGN(4) IfxCpu_syncEvent g_cpuSyncEvent = 0;
 
 uint8_t cpu0_main_count = 0;
@@ -87,9 +91,13 @@ void core0_main(void)
     
     cpu0_main_count++; //Step No. 6
 
+    /* Start CPU1 and CPU2 */
+    IfxCpu_startCore(&MODULE_CPU1, &core1_main);
+    IfxCpu_startCore(&MODULE_CPU2, &core2_main);
+
     /* Wait for CPU sync event */
     IfxCpu_emitEvent(&g_cpuSyncEvent);
-    IfxCpu_waitEvent(&g_cpuSyncEvent, 1);
+    IfxCpu_waitEvent(&g_cpuSyncEvent, 3);  /* Wait for all 3 CPUs */
     
     cpu0_main_count++; //Step No. 7
 
