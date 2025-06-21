@@ -35,6 +35,7 @@
  * \documents See README.md
  * \lastUpdated 2023-04-27
  *********************************************************************************************************************/
+#include "Ifx_Types.h"
 #include "IfxCpu.h"
 #include "IfxScuWdt.h"
 
@@ -44,45 +45,64 @@
 
 IFX_ALIGN(4) IfxCpu_syncEvent g_cpuSyncEvent = 0;
 
+uint8_t cpu0_main_count = 0;
+
 void core0_main(void)
 {
     IfxCpu_enableInterrupts();
     
+    cpu0_main_count++; //Step No. 1
+
     /* !!WATCHDOG0 AND SAFETY WATCHDOG ARE DISABLED HERE!!
      * Enable the watchdogs and service them periodically if it is required
      */
     IfxScuWdt_disableCpuWatchdog(IfxScuWdt_getCpuWatchdogPassword());
     IfxScuWdt_disableSafetyWatchdog(IfxScuWdt_getSafetyWatchdogPassword());
 
+    cpu0_main_count++; //Step No. 2
+
     /* Create init semaphores for each CPU0 */
     g_cpu0InitSem = xSemaphoreCreateBinary();
     g_cpu1InitSem = xSemaphoreCreateBinary();
     g_cpu2InitSem = xSemaphoreCreateBinary();
+
+    cpu0_main_count++; //Step No. 3
 
     /* Make each init semaphore available exactly once */
     xSemaphoreGive(g_cpu0InitSem);
     xSemaphoreGive(g_cpu1InitSem);
     xSemaphoreGive(g_cpu2InitSem);
     
+    cpu0_main_count++; //Step No. 4
+
     /* Wait for CPU sync event */
     IfxCpu_emitEvent(&g_cpuSyncEvent);
     IfxCpu_waitEvent(&g_cpuSyncEvent, 1);
     
+    cpu0_main_count++; //Step No. 5
+
     /* Create init task on CPU0 */
     xTaskCreate(task_cpu0_init, "INIT CPU0", CPU0_INIT_TASK_STACK, NULL, CPU0_INIT_TASK_PRIORITY, NULL);
     
+    cpu0_main_count++; //Step No. 6
+
     /* Create placeholder tasks on CPU0 */
     xTaskCreate(task_cpu0_1ms, "CPU0 1MS", CPU0_1MS_TASK_STACK, NULL, CPU0_1MS_TASK_PRIORITY, NULL);
     xTaskCreate(task_cpu0_10ms, "CPU0 10MS", CPU0_10MS_TASK_STACK, NULL, CPU0_10MS_TASK_PRIORITY, NULL);
     xTaskCreate(task_cpu0_100ms, "CPU0 100MS", CPU0_100MS_TASK_STACK, NULL, CPU0_100MS_TASK_PRIORITY, NULL);
     xTaskCreate(task_cpu0_1000ms, "CPU0 1000MS", CPU0_1000MS_TASK_STACK, NULL, CPU0_1000MS_TASK_PRIORITY, NULL);
     
+    cpu0_main_count++; //Step No. 7
+
     /* Start the scheduler */
     vTaskStartScheduler();
     
+    cpu0_main_count++; //Step No. 8
+
     /* Should never reach here if scheduler starts successfully */
     while (1)
     {
+        cpu0_main_count++; //Step No. 9
         __nop();
     }
 }

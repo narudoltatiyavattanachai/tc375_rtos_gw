@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <launchConfiguration type="si.isystem.eclipse.debug.launch.debugLaunchType">
+    <stringAttribute key="com.infineon.auriy.buildsystem.debug.launch.BUILD_CONFIGURATION_NAME" value="TriCore Release (TASKING)"/>
     <stringAttribute key="communicationType" value="USB"/>
     <booleanAttribute key="createSMPConfig" value="true"/>
     <stringAttribute key="deviceName" value="TC375T"/>
     <stringAttribute key="hardwareType" value="IFX_DAS"/>
-    <stringAttribute key="imageCheck" value="Yes"/>
+    <stringAttribute key="imageCheck" value="Default"/>
     <booleanAttribute key="isAnalyzeSourceFiles" value="false"/>
     <booleanAttribute key="isBringWinIdeaToTop" value="true"/>
     <booleanAttribute key="isLaunchInvisibleWinIdeaInstance" value="true"/>
@@ -13,14 +14,13 @@
     <booleanAttribute key="isVerboseMode" value="false"/>
     <booleanAttribute key="isVerifyAfterDownload" value="true"/>
     <intAttribute key="org.eclipse.cdt.launch.ATTR_BUILD_BEFORE_LAUNCH_ATTR" value="2"/>
-    <stringAttribute key="org.eclipse.cdt.launch.COREFILE_PATH" value=""/>
     <stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_ID" value="IConnectDebugger.winIdea"/>
     <booleanAttribute key="org.eclipse.cdt.launch.DEBUGGER_STOP_AT_MAIN" value="true"/>
     <stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_STOP_AT_MAIN_SYMBOL" value="core0_main"/>
     <stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value="TriCore Release (TASKING)\tc375_rtos_gw.elf"/>
     <stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value="tc375_rtos_gw"/>
-    <booleanAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_AUTO_ATTR" value="true"/>
-    <stringAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_ID_ATTR" value="com.infineon.aurix.buildsystem.managed.configuration.binary.12826555"/>
+    <booleanAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_AUTO_ATTR" value="false"/>
+    <stringAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_ID_ATTR" value=""/>
     <booleanAttribute key="org.eclipse.debug.core.ATTR_FORCE_SYSTEM_CONSOLE_ENCODING" value="false"/>
     <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
         <listEntry value="/tc375_rtos_gw"/>
@@ -28,6 +28,6 @@
     <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
         <listEntry value="4"/>
     </listAttribute>
-    <stringAttribute key="selectedDevice" value="AURIX LITE KIT V2.0 (TC375) LK96V4WO"/>
+    <stringAttribute key="selectedDevice" value=""/>
     <stringAttribute key="workspaceFileName" value=".ads/winIDEAWorkspaces/TriCore-Release-(TASKING)/ADS.xjrf"/>
 </launchConfiguration>
