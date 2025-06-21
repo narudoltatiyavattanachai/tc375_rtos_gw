@@ -55,7 +55,6 @@ uint32_t cpu0_1000ms_count = 0;
 /* Button state variables for CPU0 task - hardware pull-up, so default low */
 static IfxPort_State previous_button_state = IfxPort_State_low;
 static uint32_t button_debounce_counter = 0;
-static bool button_already_pressed = false;
 
 /* Global flag variables */
 volatile IfxPort_State BUTTON_PRESSED_FLAG = IfxPort_State_low;
@@ -219,6 +218,8 @@ void vApplicationStackOverflowHook_CPU0(TaskHandle_t xTask, char *pcTaskName)
 }
 
 /* Button handling function */
+static bool button_already_pressed = false;
+
 void app_cpu0_button(void)
 {
     BUTTON_PRESSED_FLAG = IfxPort_getPinState(BUTTON_0.port, BUTTON_0.pinIndex);
@@ -243,6 +244,7 @@ void app_cpu0_button(void)
         button_already_pressed = false;  // Allow next press
     }
 }
+
 /* Toggle LED1 - always active */
 void app_cpu0_led1(void)
 {
