@@ -1,5 +1,5 @@
 /**********************************************************************************************************************
- * \file App_Cpu1.c
+ * \file App_Cpu1_Logic.c
  * \copyright Copyright (C) Infineon Technologies AG 2023
  *
  * Use of this file is subject to the terms of use agreed between (i) you or the company in which ordinary course of
@@ -28,165 +28,49 @@
 /*********************************************************************************************************************/
 /*-----------------------------------------------------Includes------------------------------------------------------*/
 /*********************************************************************************************************************/
-#define FREERTOS_CONFIG_H_INCLUDE_GUARD
-#include "FreeRTOSConfig1.h"
-#undef FREERTOS_CONFIG_H_INCLUDE_GUARD
-
-#include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h"
 #include "Port/Io/IfxPort_Io.h"
 #include "App_Config.h"
-
-/*********************************************************************************************************************/
-/*-----------------------------------------------------Macros--------------------------------------------------------*/
-/*********************************************************************************************************************/
-/* Configuration macros are now defined in App_Config.h for centralized management */
+#include <stdint.h>
+#include <stdbool.h>
 
 /*********************************************************************************************************************/
 /*-------------------------------------------------Global variables--------------------------------------------------*/
 /*********************************************************************************************************************/
+extern uint32_t cpu1_tick_counter;
 
-uint32_t cpu1_1ms_count = 0;
-uint32_t cpu1_10ms_count = 0;
-uint32_t cpu1_100ms_count = 0;
-uint32_t cpu1_1000ms_count = 0;
-
-/*********************************************************************************************************************/
-/*---------------------------------------------Function Implementations----------------------------------------------*/
-/*********************************************************************************************************************/
-
-
-/* CPU1 initialization task that runs at 1ms */
-void task_cpu1_init(void *arg)
+/* CPU1 LED2 ON control with symmetric flag checking */
+void app_cpu1_led2on(void)
 {
-    /* Wait for CPU1 initialization semaphore before proceeding */
-    // if (xSemaphoreTake(g_cpu1InitSem, portMAX_DELAY) == pdTRUE)
-    // {
-        /* Setup the port/pin connected to LED1 to general output mode push-pull.
-         * Purpose: Configure LED1 pin (P00.5) as output to control LED state
-         */
-        IfxPort_setPinMode(LED_1.port, LED_1.pinIndex, IfxPort_Mode_outputPushPullGeneral);
-        
-        /* Turn off LED1 initially (LED is active low)
-         * Purpose: Ensure LED1 starts in known OFF state during system initialization
-         */
-        IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_high);
-    // }
-    
-    while (1)
+    /* CPU1 LED2 ON control with balanced state management */
+    if ((cpu1_tick_counter % 100000) == 0)
     {
-        /* Wait for CPU1 init semaphore */
-        // if (xSemaphoreTake(g_cpu1InitSem, portMAX_DELAY) == pdTRUE)
-        // {
-            /* Give CPU1 tick semaphore to allow other tasks to proceed */
-            // if (g_cpu1TickSem != NULL)
-            // {
-            //     xSemaphoreGive(g_cpu1TickSem);
-            // }
-        // }
+        cpu1_tick_counter++;
         
-        /* Run at 1ms interval */
-        vTaskDelay(pdMS_TO_TICKS(1));
-    }
-}
-
-/* CPU1 1ms placeholder task */
-void task_cpu1_1ms(void *arg)
-{
-    while (1)
-    {
-        /* Wait for CPU1 tick semaphore */
-        // if (xSemaphoreTake(g_cpu1TickSem, portMAX_DELAY) == pdTRUE)
-        // {
-            /* Placeholder for 1ms task functionality */
-            cpu1_1ms_count++;
+        /* CPU1 execution conditions: LED process active AND CPU1 ready AND CPU2 not complete */
+        if (LED_PROCESS_ACTIVE && CPU1_EXECUTION_READY && !CPU2_EXECUTION_COMPLETE)
+        {
+            /* Pre-execution state management */
+            CPU1_EXECUTION_READY = false;      /* Reset CPU1 ready flag */
+            CPU1_EXECUTION_COMPLETE = false;   /* Reset CPU1 completion flag */
             
-            /* Give semaphore back before finishing */
-            // xSemaphoreGive(g_cpu1TickSem);
-        // }
-        
-        /* Task period: 1ms */
-        vTaskDelay(pdMS_TO_TICKS(1));
-    }
-}
-
-/* CPU1 10ms placeholder task */
-void task_cpu1_10ms(void *arg)
-{
-    while (1)
-    {
-        /* Wait for CPU1 tick semaphore */
-        // if (xSemaphoreTake(g_cpu1TickSem, portMAX_DELAY) == pdTRUE)
-        // {
-            /* Placeholder for 10ms task functionality */
-            cpu1_10ms_count++;
+            /* CPU1 main execution: Turn LED2 ON */
+            IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_low);
+            cpu1_loop_count++;
             
-            /* Give semaphore back before finishing */
-            // xSemaphoreGive(g_cpu1TickSem);
-        // }
+            /* Post-execution state management */
+            CPU1_EXECUTION_COMPLETE = true;    /* Signal CPU1 has completed */
+            CPU2_EXECUTION_READY = true;       /* Enable CPU2 to start */
+            cpu1_cpu2_sequence_count++;        /* Track successful sequences */
+        }
         
-        /* Task period: 10ms */
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-}
-
-/* CPU1 100ms placeholder task */
-void task_cpu1_100ms(void *arg)
-{
-    while (1)
-    {
-        /* Wait for CPU1 tick semaphore */
-        // if (xSemaphoreTake(g_cpu1TickSem, portMAX_DELAY) == pdTRUE)
-        // {
-            /* Toggle LED1 state */
-            cpu1_100ms_count++;
-            app_cpu1_led();
-            
-            /* Give semaphore back before finishing */
-            // xSemaphoreGive(g_cpu1TickSem);
-        // }
-        
-        /* Task period: 100ms */
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
-}
-
-/* CPU1 1000ms task - LED1 functionality */
-void task_cpu1_1000ms(void *arg)
-{
-    while (1)
-    {
-        /* Wait for CPU1 tick semaphore */
-        // if (xSemaphoreTake(g_cpu1TickSem, portMAX_DELAY) == pdTRUE)
-        // {
-            /* Placeholder for 1000ms task functionality */
-            cpu1_1000ms_count++;
-            
-            /* Give semaphore back before finishing */
-            // xSemaphoreGive(g_cpu1TickSem);
-        // }
-        
-        /* Task period: 1000ms */
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-}
-
-/* Required FreeRTOS callback for CPU1, called in case of a stack overflow */
-void vApplicationStackOverflowHook_CPU1(TaskHandle_t xTask, char *pcTaskName)
-{
-    while (1)
-    {
-        __nop();
-    }
-}
-
-
-/* Toggle LED1 based on enable flag */
-void app_cpu1_led(void)
-{
-    if (LED1_ENABLE_FLAG)
-    {
-        IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_toggled);
+        /* CPU1 monitoring: Reset flags when CPU2 completes */
+        if (CPU2_EXECUTION_COMPLETE)
+        {
+            CPU2_EXECUTION_COMPLETE = false;   /* Reset CPU2 completion flag */
+            if (LED_PROCESS_ACTIVE)
+            {
+                CPU1_EXECUTION_READY = true;   /* Ready for next cycle */
+            }
+        }
     }
 }

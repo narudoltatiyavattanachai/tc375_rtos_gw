@@ -27,17 +27,12 @@
 #include "Ifx_Types.h"
 #include "IfxCpu.h"
 #include "IfxScuWdt.h"
-
-/* Include CPU1 specific FreeRTOS configuration */
-#define FREERTOS_CONFIG_H_INCLUDE_GUARD
-#include "FreeRTOSConfig1.h"
-#undef FREERTOS_CONFIG_H_INCLUDE_GUARD
-
-#include "FreeRTOS.h"
-#include "task.h"
+#include "Port/Io/IfxPort_Io.h"
 #include "App_Config.h"
 
 extern IfxCpu_syncEvent g_cpuSyncEvent;
+
+static uint32_t cpu1_tick_counter = 0;
 
 void core1_main(void)
 {
@@ -52,21 +47,13 @@ void core1_main(void)
     IfxCpu_emitEvent(&g_cpuSyncEvent);
     IfxCpu_waitEvent(&g_cpuSyncEvent, 1);
     
-    /* Create init task on CPU1 */
-    xTaskCreate(task_cpu1_init, "INIT CPU1", CPU1_INIT_TASK_STACK, NULL, CPU1_INIT_TASK_PRIORITY, NULL);
-    
-    /* Create placeholder tasks on CPU1 */
-    xTaskCreate(task_cpu1_1ms, "CPU1 1MS", CPU1_1MS_TASK_STACK, NULL, CPU1_1MS_TASK_PRIORITY, NULL);
-    xTaskCreate(task_cpu1_10ms, "CPU1 10MS", CPU1_10MS_TASK_STACK, NULL, CPU1_10MS_TASK_PRIORITY, NULL);
-    xTaskCreate(task_cpu1_100ms, "CPU1 100MS", CPU1_100MS_TASK_STACK, NULL, CPU1_100MS_TASK_PRIORITY, NULL);
-    xTaskCreate(task_cpu1_1000ms, "CPU1 1000MS", CPU1_1000MS_TASK_STACK, NULL, CPU1_1000MS_TASK_PRIORITY, NULL);
-    
-    /* Start the FreeRTOS scheduler on CPU1 */
-    vTaskStartScheduler();
-    
-    /* Should never reach here if scheduler starts successfully */
+    /* Main bare-metal loop - CPU1 now runs without FreeRTOS */
     while(1)
     {
+        
+        app_cpu1_led2on();
+
+        /* Simple delay */
         __nop();
     }
 }

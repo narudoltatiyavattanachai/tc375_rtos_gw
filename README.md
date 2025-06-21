@@ -1,148 +1,170 @@
-# Multi-Core FreeRTOS for AURIX™ TC375
+# TC375 RTOS Gateway - Multi-CPU System
 
-This project demonstrates a minimal multi-core FreeRTOS setup for the Infineon AURIX™ TC375 MCU.
+This project implements a TC375 multi-CPU RTOS gateway system where CPU0 runs FreeRTOS as the master controller, while CPU1 and CPU2 operate as bare-metal compute nodes waiting for commands via shared LMU memories.
 
-**Core Assignments:**
-- **CPU0:** System boot, button polling, and LED control logic
-- **CPU1:** LED1 control
-- **CPU2:** LED2 control
+**Architecture Overview:**
+- **CPU0:** Master controller running FreeRTOS with periodic tasks
+- **CPU1:** Bare-metal compute node for LED2 ON operations  
+- **CPU2:** Bare-metal compute node for LED2 OFF operations
 
-**Key Files:**
-- `Configurations/FreeRTOSConfig.h`  (CPU0)
-- `Configurations/FreeRTOSConfig1.h` (CPU1)
-- `Configurations/FreeRTOSConfig2.h` (CPU2)
+**Key Components:**
+- `App_Config.h`: System-wide configuration and shared memory declarations
+- `App_Cpu0_Kernel.c`: CPU0 FreeRTOS tasks and application logic
+- `App_Cpu1_Logic.c`: CPU1 LED2 ON control logic
+- `App_Cpu2_Comm.c`: CPU2 LED2 OFF control logic
+- `Cpu0_Main.c`: CPU0 initialization and FreeRTOS scheduler
+- `Cpu1_Main.c`: CPU1 bare-metal main loop
+- `Cpu2_Main.c`: CPU2 bare-metal main loop
 
-**Task Summary:**
-- **CPU0:** System boot, button polling, and LED enable logic. Polls BUTTON_0 and sets enable flags for LED1 and LED2.
-- **CPU1:** LED1 control. Toggles LED_1 in a 100ms periodic task, but only when enabled by CPU0's flag.
-- **CPU2:** LED2 control. Toggles LED_2 in a 1000ms periodic task, but only when enabled by CPU0's flag.
-- **Inter-core sync:** LED enable/disable is controlled via boolean flags set by CPU0's button handler
+**System Operation:**
+- **CPU0 Tasks:** Multiple FreeRTOS tasks running at different frequencies (1ms, 10ms, 100ms, 1000ms)
+- **CPU0 Functions:** Button processing, LED1 control, command generation for CPU1/CPU2
+- **CPU1/CPU2 Operation:** Continuous polling of shared LMU memory for commands from CPU0
+- **Inter-CPU Communication:** Shared boolean flags and counters in LMU memory
 
-### Typical AURIX TC375 Core Partitioning
+## Current Implementation Architecture
 
-| Core  | Typical Domain                                             |
-|-------|------------------------------------------------------------|
-| CPU0  | Boot, OS kernel, safety manager, watchdog                  |
-| CPU1  | Real-time control, time-critical logic                     |
-| CPU2  | Networking, diagnostics, logging, less time-critical tasks |
+### CPU Role Assignments
 
-### Potential Enhancements
-For more complex applications, consider:
-1. **Inter-Core Message Passing**: Communication between CPU cores
-2. **Shared Resource Management**: When multiple cores need to access the same hardware
-3. **Load Balancing**: Dynamic task distribution based on CPU utilization
-4. **Cross-Core Synchronization**: For coordinated multi-core operations
+| Core  | Operating System | Role | Primary Functions |
+|-------|------------------|------|------------------|
+| CPU0  | FreeRTOS | Master Controller | System initialization, button handling, LED1 control, command dispatch |
+| CPU1  | Bare-metal | Compute Node | LED2 ON control, command reception via shared LMU |
+| CPU2  | Bare-metal | Compute Node | LED2 OFF control, command reception via shared LMU |
+
+### Communication Mechanism
+- **Shared LMU Memory**: CPU0 writes commands/flags, CPU1/CPU2 read and execute
+- **Global Flags**: `LED1_ENABLE_FLAG`, `LED2_ENABLE_FLAG`, `LED2_BLINK_FLAG`
+- **Status Counters**: Task execution and LED operation monitoring
+
+### CPU0 FreeRTOS Task Schedule
+
+| Task | Frequency | Priority | Function |
+|------|-----------|----------|----------|
+| `task_cpu0_init` | 1ms | 2 | Hardware initialization, pin configuration |
+| `task_cpu0_1ms` | 1ms | 3 | High-frequency operations placeholder |
+| `task_cpu0_10ms` | 10ms | 4 | Button handling with debouncing |
+| `task_cpu0_100ms` | 100ms | 5 | Medium-frequency operations placeholder |
+| `task_cpu0_1000ms` | 1000ms | 6 | LED1/LED2 control, flag updates |
 
 ## Hardware Configuration
 
-### System Timers (STM)
-Each CPU core uses its own STM module:
-- **CPU0**: STM0 (0xF0001000)
-- **CPU1**: STM1 (0xF0001100)
-- **CPU2**: STM2 (0xF0001200)
+### Pin Assignments
+- **BUTTON_0**: P00.7 - User input monitored by CPU0
+- **LED_1**: P00.5 - Controlled directly by CPU0
+- **LED_2**: P00.6 - Coordinated control by CPU1 (ON) and CPU2 (OFF)
 
-### Interrupt Sources
-- **CPU0**: SRC address 0xF0038990
-- **CPU1**: SRC address 0xF0038998
-- **CPU2**: SRC address 0xF00389A0
+### Memory Architecture
+- **CPU0**: Full system memory access, manages shared LMU regions
+- **CPU1/CPU2**: Access to designated shared LMU areas for command reception
+- **Shared Variables**: Global flags and counters in LMU for cross-CPU communication
 
 ### Clock Configuration
-All cores operate at:
-- **CPU Clock**: 300 MHz
-- **STM Clock**: 100 MHz
-- **Tick Rate**: 1000 Hz (1ms tick)
+- **CPU Clock**: 300 MHz (all cores)
+- **FreeRTOS Tick**: 1000 Hz (1ms tick) on CPU0 only
+- **CPU1/CPU2**: No OS tick, continuous polling loops
 
-## Build Configuration
+## System Behavior
 
-### Compiler Flags
-Ensure the following preprocessor definitions are set:
-- For CPU1 builds: Include `FreeRTOSConfig1.h`
-- For CPU2 builds: Include `FreeRTOSConfig2.h`
-- Each core requires separate compilation units
+### Initialization Sequence
+1. **CPU0**: Boots first, initializes hardware, starts FreeRTOS scheduler
+2. **CPU1/CPU2**: Start bare-metal main loops, begin polling shared memory
+3. **Synchronization**: CPU sync event ensures coordinated startup
 
-### Memory Layout
-The updated linker script (`Lcf_Gnuc_Tricore_Tc.lsl`) provides:
-- Separate memory regions for each CPU core
-- Increased stack sizes for FreeRTOS operation
-- Proper interrupt vector table placement
+### Runtime Operation
+1. **CPU0**: Processes button input, updates shared flags every 10ms
+2. **CPU0**: Controls LED1 directly, manages LED2 control flags every 1000ms  
+3. **CPU1**: Monitors `LED2_BLINK_FLAG`, executes LED2 ON when active
+4. **CPU2**: Monitors `LED2_BLINK_FLAG`, executes LED2 OFF when active
+5. **All CPUs**: Update monitoring counters for system status tracking
 
 ## Testing and Verification
 
 ### Expected Behavior
-1. **Button**: CPU0 polls button state every 50ms with debouncing (P00.7)
-2. **LED Control**: Button press toggles LED operation (start/stop)
-3. **LED1**: Blinks at 250ms intervals when enabled (controlled by CPU1 + semaphore)
-4. **LED2**: Toggles on button press only when enabled (controlled by CPU2 + semaphore)
-5. **Initial State**: LEDs start running by default
-6. **System**: All three cores coordinate via binary semaphore
+1. **Button Handling**: CPU0 polls button every 10ms with debounce logic (P00.7)
+2. **LED1 Control**: CPU0 toggles LED1 directly when `LED1_ENABLE_FLAG` is set (1000ms intervals)
+3. **LED2 Control**: CPU1/CPU2 coordinate LED2 blinking when `LED2_BLINK_FLAG` is active
+4. **Button Press Effect**: Toggles `LED2_BLINK_FLAG` state after debounce confirmation
+5. **System Monitoring**: All CPUs increment task counters for debugging/monitoring
+6. **Inter-CPU Communication**: Shared flags updated by CPU0, monitored by CPU1/CPU2
 
 ### Debug Points
-1. Verify each CPU starts its FreeRTOS scheduler successfully
-2. Check button task creation and polling on CPU0
-3. Check LED1 task creation and execution on CPU1
-4. Check LED2 task creation and execution on CPU2
-5. Verify ERU interrupt routing to CPU2
-6. Test button press functionality and counter increment
-7. **Verify semaphore creation and initial state**
-8. **Test LED start/stop toggle functionality**
-9. **Confirm both LEDs stop/start together**
+1. **CPU0**: Verify FreeRTOS scheduler starts and all tasks are created successfully
+2. **CPU0**: Check button polling and debounce logic in `task_cpu0_10ms`
+3. **CPU0**: Verify LED1 control logic in `task_cpu0_1000ms`
+4. **CPU1/CPU2**: Confirm bare-metal main loops start and polling begins
+5. **Shared Memory**: Verify flag updates from CPU0 are visible to CPU1/CPU2
+6. **LED Control**: Test coordinated LED2 ON/OFF by CPU1/CPU2
+7. **Counters**: Monitor task execution counters for all CPUs
+8. **Communication**: Verify command flow from CPU0 to compute nodes
 
 ### Performance Monitoring
-- Monitor button polling responsiveness on CPU0
-- Monitor LED1 blink timing to verify CPU1 task execution
-- Test button responsiveness to verify CPU2 interrupt handling
-- Use debugger to verify task states on each core
-- Check button press counter using `get_button_press_count()` function
+- **CPU0 Task Execution**: Monitor counter increments for each periodic task
+- **Button Responsiveness**: Verify 10ms polling with proper debouncing
+- **LED Control Latency**: Measure response time from flag update to LED action
+- **Memory Usage**: Check FreeRTOS heap usage on CPU0
+- **Compute Node Efficiency**: Monitor CPU1/CPU2 polling loop performance
 
 ## Development Guidelines
 
-### Adding New Tasks
-1. Determine appropriate CPU core based on task requirements
-2. Include the correct FreeRTOS configuration header
-3. Ensure adequate stack size allocation
-4. Consider inter-core synchronization needs
+### Adding New Compute Tasks
+1. **CPU0**: Add new FreeRTOS tasks as needed, determine appropriate frequency
+2. **CPU1/CPU2**: Extend main loop polling logic for new command types
+3. **Shared Memory**: Define new flags/commands in `App_Config.h`
+4. **Communication**: Implement command generation in CPU0, reception in compute nodes
 
-### Resource Management
-- LED1 and LED2 are now controlled by separate CPUs (no sharing)
-- Each CPU has dedicated hardware resources
-- Implement synchronization only when cores need to communicate
+### Inter-CPU Communication Best Practices
+- Use volatile declarations for all shared variables
+- Implement atomic operations for critical flag updates
+- Add monitoring counters for debugging communication flow
+- Consider memory barriers for complex synchronization
 
 ### Error Handling
-Each core has its own stack overflow hook:
-- `vApplicationStackOverflowHook()` - **Global FreeRTOS stack overflow hook, implemented only in Cpu0_Main.c**
+- **CPU0**: FreeRTOS stack overflow hook in `Cpu0_Main.c`
+- **CPU1/CPU2**: Simple infinite loop error handling in bare-metal code
+- **System**: Monitor counter increments to detect CPU failures
 
 ## Troubleshooting
 
 ### Common Issues
-1. **Core doesn't start**: Check CPU sync event synchronization
-2. **Button not responding**: Verify CPU0 button task creation and pin configuration
-3. **LED1 doesn't blink**: Verify CPU1 scheduler and task creation
-4. **LED2 doesn't respond to button**: Check ERU interrupt routing to CPU2
-5. **Stack overflow**: Increase task stack sizes in `xTaskCreate()` calls
+1. **CPU0 Tasks Not Running**: Check FreeRTOS scheduler start and task creation
+2. **Button Not Responding**: Verify pin configuration and 10ms polling task
+3. **LED1 Not Toggling**: Check `LED1_ENABLE_FLAG` and CPU0 1000ms task
+4. **LED2 Not Blinking**: Verify `LED2_BLINK_FLAG` and CPU1/CPU2 polling
+5. **Communication Failure**: Check shared memory visibility and volatile declarations
+6. **Counter Not Incrementing**: Verify task execution and polling loop operation
 
 ### Debug Tools
-- Use AURIX Development Studio debugger
-- Set breakpoints in each core's main function
-- Monitor task states using FreeRTOS-aware debugging
-- Check memory usage in each core's dedicated DSPR
+- **AURIX Development Studio**: Multi-core debugging with individual CPU breakpoints
+- **Counter Monitoring**: Check task execution counters for all CPUs
+- **Flag Inspection**: Monitor shared flag states in memory view
+- **FreeRTOS Debug**: Use FreeRTOS-aware debugging for CPU0 task states
 
 ## Future Enhancements
 
-### Recommended Additions
-1. **Message Passing Framework**: Implement robust inter-core communication
-2. **Load Balancing**: Dynamic task distribution based on CPU load
-3. **Fault Tolerance**: Implement watchdog and error recovery mechanisms
-4. **Power Management**: Optimize core usage for power efficiency
+### Scalability Options
+1. **Command Queue System**: Implement FIFO queues for complex command sequences
+2. **Message Passing Framework**: Add structured message passing between CPUs
+3. **Dynamic Task Allocation**: Distribute tasks based on CPU load and priority
+4. **Watchdog Integration**: Add inter-CPU health monitoring and recovery
 
-### Integration Possibilities
-- CAN bus communication handling on dedicated core
-- Ethernet processing on separate core
-- Safety-critical tasks isolation
-- Real-time signal processing distribution
+### Advanced Communication
+- **DMA-based Transfer**: High-throughput data exchange for compute-intensive tasks
+- **Interrupt-driven Signaling**: Reduce polling overhead with targeted interrupts
+- **Priority-based Scheduling**: Implement priority levels for compute node commands
+- **Fault Recovery**: Automatic failover and recovery mechanisms
+
+### Application Extensions
+- **CAN Bus Processing**: Dedicated CPU for automotive communication
+- **Ethernet Gateway**: Network processing on dedicated compute node
+- **Safety Functions**: Isolated safety-critical task execution
+- **Signal Processing**: Real-time DSP algorithms on compute nodes
 
 ---
 
-## Legacy Documentation
-See `README_LEGACY.md` for details on previous single-core and older multi-core demo implementations. Some function and file names may differ from the current codebase.
+## Documentation References
 
-This multi-core FreeRTOS implementation provides a foundation for complex, distributed real-time applications on the AURIX™ TC375 platform.
+- **CLAUDE.md**: Detailed technical architecture and implementation notes
+- **App_Config.h**: System-wide configuration and shared memory declarations
+
+This TC375 RTOS Gateway implementation demonstrates the effective use of multi-CPU architecture with FreeRTOS master control and bare-metal compute nodes, providing a foundation for complex real-time distributed applications.

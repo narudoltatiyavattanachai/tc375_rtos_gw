@@ -1,5 +1,5 @@
 /**********************************************************************************************************************
- * \file App_Cpu2.c
+ * \file App_Cpu2_Comm.c
  * \copyright Copyright (C) Infineon Technologies AG 2023
  *
  * Use of this file is subject to the terms of use agreed between (i) you or the company in which ordinary course of
@@ -28,200 +28,56 @@
 /*********************************************************************************************************************/
 /*-----------------------------------------------------Includes------------------------------------------------------*/
 /*********************************************************************************************************************/
-#define FREERTOS_CONFIG_H_INCLUDE_GUARD
-#include "FreeRTOSConfig2.h"
-#undef FREERTOS_CONFIG_H_INCLUDE_GUARD
-
-#include "FreeRTOS.h"
-#include "task.h"
-#include "semphr.h"
 #include "Port/Io/IfxPort_Io.h"
 #include "App_Config.h"
-
-/*********************************************************************************************************************/
-/*-----------------------------------------------------Macros--------------------------------------------------------*/
-/*********************************************************************************************************************/
-/* Configuration macros are now defined in App_Config.h for centralized management */
+#include <stdint.h>
+#include <stdbool.h>
 
 /*********************************************************************************************************************/
 /*-------------------------------------------------Global variables--------------------------------------------------*/
 /*********************************************************************************************************************/
+extern uint32_t cpu2_tick_count;
 
-uint32_t cpu2_1ms_count = 0;
-uint32_t cpu2_10ms_count = 0;
-uint32_t cpu2_100ms_count = 0;
-uint32_t cpu2_1000ms_count = 0;
-
-/*********************************************************************************************************************/
-/*---------------------------------------------Function Implementations----------------------------------------------*/
-/*********************************************************************************************************************/
-
-
-/* CPU2 initialization task that runs at 1ms */
-void task_cpu2_init(void *arg)
+/* CPU2 communication logic - now empty, all app logic moved to CPU0 */
+void app_cpu2_led2off(void)
 {
-    /* Wait for CPU2 initialization semaphore before proceeding */
-    // if (xSemaphoreTake(g_cpu2InitSem, portMAX_DELAY) == pdTRUE)
-    // {
-
-        /* Setup the port/pin connected to BUTTON1 as input with pull-up resistor
-         * Purpose: Configure BUTTON1 pin (P00.7) as input to read button state
-         */
-         IfxPort_setPinMode(BUTTON_0.port, BUTTON_0.pinIndex, IfxPort_Mode_inputPullUp);
-
-    // }
-    
-    while (1)
+    /* CPU2 LED2 OFF control with balanced state management */
+    if ((cpu2_tick_count % 100000) == 0)
     {
-        /* Wait for CPU2 init semaphore */
-        // if (xSemaphoreTake(g_cpu2InitSem, portMAX_DELAY) == pdTRUE)
-        // {
-            /* Give CPU2 tick semaphore to allow other tasks to proceed */
-            // if (g_cpu2TickSem != NULL)
-            // {
-            //     xSemaphoreGive(g_cpu2TickSem);
-            // }
-        // }
+        cpu2_tick_count++;
         
-        /* Run at 1ms interval */
-        vTaskDelay(pdMS_TO_TICKS(1));
-    }
-}
-
-/* CPU2 1ms placeholder task */
-void task_cpu2_1ms(void *arg)
-{
-    while (1)
-    {
-        /* Wait for CPU2 tick semaphore */
-        // if (xSemaphoreTake(g_cpu2TickSem, portMAX_DELAY) == pdTRUE)
-        // {
-            /* Placeholder for 1ms task functionality */
-            cpu2_1ms_count++;
-            
-            /* Give semaphore back before finishing */
-            // xSemaphoreGive(g_cpu2TickSem);
-        // }
-        
-        /* Task period: 1ms */
-        vTaskDelay(pdMS_TO_TICKS(1));
-    }
-}
-
-/* CPU2 10ms placeholder task */
-void task_cpu2_10ms(void *arg)
-{
-    while (1)
-    {
-        /* Wait for CPU2 tick semaphore */
-        // if (xSemaphoreTake(g_cpu2TickSem, portMAX_DELAY) == pdTRUE)
-        // {
-            /* Placeholder for 10ms task functionality */
-            cpu2_10ms_count++;
-            app_cpu2_button();
-
-            /* Give semaphore back before finishing */
-            // xSemaphoreGive(g_cpu2TickSem);
-        // }
-        
-        /* Task period: 10ms */
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-}
-
-/* CPU2 100ms placeholder task */
-void task_cpu2_100ms(void *arg)
-{
-    while (1)
-    {
-        /* Wait for CPU2 tick semaphore */
-        // if (xSemaphoreTake(g_cpu2TickSem, portMAX_DELAY) == pdTRUE)
-        // {
-            /* Placeholder for 100ms task functionality */
-            cpu2_100ms_count++;
-      
-            /* Give semaphore back before finishing */
-            // xSemaphoreGive(g_cpu2TickSem);
-        // }
-        
-        /* Task period: 100ms */
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
-}
-
-/* CPU2 1000ms task - LED2 functionality */
-void task_cpu2_1000ms(void *arg)
-{
-    while (1)
-    {
-        /* Wait for CPU2 tick semaphore */
-        // if (xSemaphoreTake(g_cpu2TickSem, portMAX_DELAY) == pdTRUE)
-        // {
-            /* Placeholder for 1000ms task functionality */
-            cpu2_1000ms_count++;
-         
-            /* Give semaphore back before finishing */
-            // xSemaphoreGive(g_cpu2TickSem);
-        // }
-        
-        /* Task period: 1000ms */
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-}
-
-/* Required FreeRTOS callback for CPU2, called in case of a stack overflow */
-void vApplicationStackOverflowHook_CPU2(TaskHandle_t xTask, char *pcTaskName)
-{
-    while (1)
-    {
-        __nop();
-    }
-}
-
-/* Button polling, debouncing, and tick semaphore signaling */
-void app_cpu2_button(void)
-{
-    IfxPort_State current_state = IfxPort_State_high;
-    IfxPort_State previous_state = IfxPort_State_high;
-    uint32_t debounce_counter = 0;
-
-    /* Read current button state for polling-based control */
-    current_state = IfxPort_getPinState(BUTTON_0.port, BUTTON_0.pinIndex);
-            
-    /* Button is pressed when state is low (active low) */
-    if (current_state == IfxPort_State_low)
-    {
-        /* Button is currently pressed */
-        if (previous_state == IfxPort_State_high)
+        /* CPU2 execution conditions: CPU2 ready AND CPU1 complete AND CPU1 not ready */
+        if (CPU2_EXECUTION_READY && CPU1_EXECUTION_COMPLETE && !CPU1_EXECUTION_READY)
         {
-            /* Falling edge detected - start debouncing */
-            debounce_counter = 1;
+            /* Pre-execution state management */
+            CPU2_EXECUTION_READY = false;      /* Reset CPU2 ready flag */
+            CPU2_EXECUTION_COMPLETE = false;   /* Reset CPU2 completion flag */
+            
+            /* CPU2 main execution: Always turn LED2 OFF */
+            IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_high);
+            cpu2_loop_count++;
+            
+            /* Post-execution state management */
+            CPU2_EXECUTION_COMPLETE = true;    /* Signal CPU2 has completed */
+            CPU1_EXECUTION_COMPLETE = false;   /* Reset CPU1 completion flag */
         }
-        else if (debounce_counter > 0 && debounce_counter < BUTTON_DEBOUNCE_COUNT)
+        
+        /* CPU2 monitoring: Reset flags when CPU1 completes */
+        if (CPU1_EXECUTION_COMPLETE)
         {
-            /* Continue debouncing */
-            debounce_counter++;
+            CPU1_EXECUTION_COMPLETE = false;   /* Reset CPU1 completion flag */
+            if (LED_PROCESS_ACTIVE)
+            {
+                CPU2_EXECUTION_READY = true;   /* Ready for next cycle */
+            }
         }
-        else if (debounce_counter == BUTTON_DEBOUNCE_COUNT)
+        
+        /* CPU2 idle state: Monitor for process state changes */
+        if (!LED_PROCESS_ACTIVE && !CPU1_EXECUTION_COMPLETE)
         {
-            /* Button press confirmed after debouncing - give tick semaphore to allow LED tasks to proceed */
-            debounce_counter = 0; /* Reset to prevent multiple counts */
-            
-            /* Button press confirmed - give tick semaphore to allow LED tasks to proceed */
-            //g_button_press_count++;
-                    
-            /* Give signal to toggle CPU1 and CPU2 LED tasks */
-            LED1_ENABLE_FLAG = !LED1_ENABLE_FLAG;
-            LED2_ENABLE_FLAG = !LED2_ENABLE_FLAG;
+            /* Ensure flags are reset when process is inactive */
+            CPU2_EXECUTION_READY = false;
+            CPU2_EXECUTION_COMPLETE = false;
         }
     }
-    else
-    {
-        /* Button is not pressed - reset debounce counter */
-        debounce_counter = 0;
-    }
-            
-    /* Update previous state for edge detection */
-    previous_state = current_state;
-
 }
