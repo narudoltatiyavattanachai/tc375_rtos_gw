@@ -42,7 +42,7 @@ extern uint32_t cpu1_tick_counter;
 void app_cpu1_led2on(void)
 {
     /* CPU1 LED2 ON control - Turn ON every full second (when counter hits multiples of LED2_BLINK_PERIOD*2) */
-    if (LED_PROCESS_ACTIVE && (cpu1_tick_counter % (LED2_BLINK_PERIOD * 2)) == 0)
+    if (LED_PROCESS_ACTIVE && (cpu1_tick_counter % (LED2_BLINK_PERIOD_US * 2)) == 0)
     {
         /* CPU1 turns LED2 ON for 500ms */
         IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_low);

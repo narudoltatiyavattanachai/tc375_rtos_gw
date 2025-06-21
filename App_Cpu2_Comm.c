@@ -42,7 +42,7 @@ extern uint32_t cpu2_tick_counter;
 void app_cpu2_led2off(void)
 {
     /* CPU2 LED2 OFF control - Turn OFF after 500ms delay from CPU1 ON signal */
-    if (LED_PROCESS_ACTIVE && CPU1_DATA_READY && (cpu2_tick_counter % LED2_BLINK_PERIOD) == 0)
+    if (LED_PROCESS_ACTIVE && CPU1_DATA_READY && (cpu2_tick_counter % LED2_BLINK_PERIOD_US) == 0)
     {
         /* CPU2 turns LED2 OFF after 500ms delay */
         IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_high);
