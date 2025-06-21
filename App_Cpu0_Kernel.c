@@ -75,6 +75,10 @@ volatile bool CPU1_DATA_READY = false;
 volatile bool CPU2_EXECUTION_PROCESS = false;
 volatile bool CPU2_DATA_READY = false;
 
+/* Global semaphores for CPU0 */
+SemaphoreHandle_t g_cpu0InitSem = NULL;
+SemaphoreHandle_t g_cpu0TickSem = NULL;
+
 /*********************************************************************************************************************/
 /*---------------------------------------------Function Implementations----------------------------------------------*/
 /*********************************************************************************************************************/
@@ -82,35 +86,37 @@ volatile bool CPU2_DATA_READY = false;
 /* CPU0 initialization task that runs at 1ms */
 void task_cpu0_init(void *arg)
 {
+    static bool initialized = false;
+    
     while (1)
     {
-        /* Increment init task counter */
-        cpu0_init_count++;
-        
         /* Wait for CPU0 init semaphore */
-        //if (xSemaphoreTake(g_cpu0InitSem, portMAX_DELAY) == pdTRUE)
-        //{
-
-        /* Global semaphores for CPU0 */
-        //SemaphoreHandle_t g_cpu0InitSem = NULL;
-        //SemaphoreHandle_t g_cpu0TickSem = NULL;
-
-        /* Initialize LED process control */
-        LED_PROCESS_ACTIVE = false;        /* Process starts inactive */
-        BUTTON_PRESSED_FLAG = false;       /* No button press initially */
+        if (xSemaphoreTake(g_cpu0InitSem, portMAX_DELAY) == pdTRUE)
+        {
+            /* Increment init task counter */
+            cpu0_init_count++;
+            
+            /* Run initialization only once */
+            if (!initialized)
+            {
+                /* Initialize LED process control */
+                LED_PROCESS_ACTIVE = false;        /* Process starts inactive */
+                BUTTON_PRESSED_FLAG = false;       /* No button press initially */
+                         
+                /* Initialize BUTTON0 */
+                IfxPort_setPinMode(BUTTON_0.port, BUTTON_0.pinIndex, IfxPort_Mode_inputPullUp);
                  
-        /* Initialize BUTTON0 */
-        IfxPort_setPinMode(BUTTON_0.port, BUTTON_0.pinIndex, IfxPort_Mode_inputPullUp);
-         
-         /* Initialize LED1 */
-        IfxPort_setPinMode(LED_1.port, LED_1.pinIndex, IfxPort_Mode_outputPushPullGeneral);
-        IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_high);
-        
-        /* Initialize LED2 */
-        IfxPort_setPinMode(LED_2.port, LED_2.pinIndex, IfxPort_Mode_outputPushPullGeneral);
-        IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_high);     
-
-        //}
+                 /* Initialize LED1 */
+                IfxPort_setPinMode(LED_1.port, LED_1.pinIndex, IfxPort_Mode_outputPushPullGeneral);
+                IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_high);
+                
+                /* Initialize LED2 */
+                IfxPort_setPinMode(LED_2.port, LED_2.pinIndex, IfxPort_Mode_outputPushPullGeneral);
+                IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_high);
+                
+                initialized = true;
+            }
+        }
         
         /* Run at 1ms interval */
         vTaskDelay(pdMS_TO_TICKS(1));
@@ -123,13 +129,13 @@ void task_cpu0_1ms(void *arg)
     while (1)
     {
         /* Wait for CPU0 tick semaphore */
-        //if (xSemaphoreTake(g_cpu0TickSem, portMAX_DELAY) == pdTRUE)
-        //{
+        if (xSemaphoreTake(g_cpu0TickSem, portMAX_DELAY) == pdTRUE)
+        {
             /* Placeholder for 1ms task functionality */
             cpu0_1ms_count++;
             /* Give semaphore back before finishing */
-            //xSemaphoreGive(g_cpu0TickSem);
-        //}
+            xSemaphoreGive(g_cpu0TickSem);
+        }
         
         /* Task period: 1ms */
         vTaskDelay(pdMS_TO_TICKS(1));
@@ -142,8 +148,8 @@ void task_cpu0_10ms(void *arg)
     while (1)
     {
         /* Wait for CPU0 tick semaphore */
-        //if (xSemaphoreTake(g_cpu0TickSem, portMAX_DELAY) == pdTRUE)
-        //{
+        if (xSemaphoreTake(g_cpu0TickSem, portMAX_DELAY) == pdTRUE)
+        {
             /* 10ms task functionality */
             cpu0_10ms_count++;
             
@@ -151,8 +157,8 @@ void task_cpu0_10ms(void *arg)
             app_cpu0_button();
             
             /* Give semaphore back before finishing */
-            //xSemaphoreGive(g_cpu0TickSem);
-        //}
+            xSemaphoreGive(g_cpu0TickSem);
+        }
         
         /* Task period: 10ms */
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -165,13 +171,13 @@ void task_cpu0_100ms(void *arg)
     while (1)
     {
         /* Wait for CPU0 tick semaphore */
-        //if (xSemaphoreTake(g_cpu0TickSem, portMAX_DELAY) == pdTRUE)
-        //{
+        if (xSemaphoreTake(g_cpu0TickSem, portMAX_DELAY) == pdTRUE)
+        {
             /* Placeholder for 100ms task functionality */
             cpu0_100ms_count++;
             /* Give semaphore back before finishing */
-            //xSemaphoreGive(g_cpu0TickSem);
-        //}
+            xSemaphoreGive(g_cpu0TickSem);
+        }
         
         /* Task period: 100ms */
         vTaskDelay(pdMS_TO_TICKS(100));
@@ -184,16 +190,16 @@ void task_cpu0_1000ms(void *arg)
     while (1)
     {
         /* Wait for CPU0 tick semaphore */
-        //if (xSemaphoreTake(g_cpu0TickSem, portMAX_DELAY) == pdTRUE)
-        //{
+        if (xSemaphoreTake(g_cpu0TickSem, portMAX_DELAY) == pdTRUE)
+        {
             cpu0_1000ms_count++;
 
             /* Toggle LED1 blink */
             app_cpu0_led1();
 
             /* Give semaphore back before finishing */
-            //xSemaphoreGive(g_cpu0TickSem);
-        //}
+            xSemaphoreGive(g_cpu0TickSem);
+        }
         
         /* Task period: 1000ms */
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -248,10 +254,8 @@ void app_cpu0_button(void)
     previous_button_state = current_button_state;
 }
 
-/* Toggle LED1 based on enable flag */
+/* Toggle LED1 - always active */
 void app_cpu0_led1(void)
 {
-
     IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_toggled);
-
 }

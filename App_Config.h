@@ -79,6 +79,10 @@ extern volatile bool CPU2_DATA_READY;
 #include "FreeRTOS.h"
 #include "semphr.h"
 
+/* CPU0 Semaphores */
+extern SemaphoreHandle_t g_cpu0InitSem;
+extern SemaphoreHandle_t g_cpu0TickSem;
+
 /* CPU0 Application Functions */
 void app_cpu0_led1(void);
 void app_cpu0_button(void);
