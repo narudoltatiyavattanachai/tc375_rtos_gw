@@ -58,6 +58,7 @@ extern volatile bool BUTTON_PRESSED_FLAG;
 /* CPU1/CPU2 Looping Counters */
 extern volatile uint32_t cpu1_loop_count;
 extern volatile uint32_t cpu2_loop_count;
+extern volatile uint32_t led_process_count;
 
 /* Inter-CPU Communication Flags */
 extern volatile bool LED_PROCESS_ACTIVE;
@@ -65,12 +66,6 @@ extern volatile bool CPU1_EXECUTION_PROCESS;
 extern volatile bool CPU2_EXECUTION_PROCESS;
 extern volatile bool CPU1_DATA_READY;
 extern volatile bool CPU2_DATA_READY;
-extern volatile uint32_t led_process_count;
-
-/* LED Control Flags */
-extern volatile bool LED1_ENABLE_FLAG;
-extern volatile bool LED2_ENABLE_FLAG;
-extern volatile bool LED2_BLINK_FLAG;
 
 
 /*********************************************************************************************************************/

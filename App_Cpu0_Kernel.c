@@ -71,27 +71,36 @@ void task_cpu0_init(void *arg)
         /* Wait for CPU0 init semaphore */
         //if (xSemaphoreTake(g_cpu0InitSem, portMAX_DELAY) == pdTRUE)
         //{
-        
-        /* Setup the port/pin connected to LED2 as general push-pull output
-         * Purpose: Configure LED2 pin (P00.6) as output to control LED state
-         */
-         IfxPort_setPinMode(LED_2.port, LED_2.pinIndex, IfxPort_Mode_outputPushPullGeneral);
 
-         /* Turn off LED2 initially (LED is active low)
-          * Purpose: Ensure LED2 starts in known OFF state during system initialization
-          */
-         IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_high);
+        /* Global semaphores for CPU0 */
+        SemaphoreHandle_t g_cpu0InitSem = NULL;
+        SemaphoreHandle_t g_cpu0TickSem = NULL;
+
+        /* Global flag variables */
+        volatile bool BUTTON_PRESSED_FLAG = false;
+
+        /* CPU1/CPU2 looping counters */
+        volatile uint32_t cpu1_loop_count = 0;
+        volatile uint32_t cpu2_loop_count = 0;
+        volatile uint32_t led_process_count = 0;
+
+        /* Sequential execution control variables */
+        volatile bool LED_PROCESS_ACTIVE = false;
+        volatile bool CPU1_EXECUTION_PROCESS = false;
+        volatile bool CPU1_DATA_READY = false;
+        volatile bool CPU2_EXECUTION_PROCESS = false;
+        volatile bool CPU2_DATA_READY = false;
+                 
+        /* Initialize BUTTON0 */
+        IfxPort_setPinMode(BUTTON_0.port, BUTTON_0.pinIndex, IfxPort_Mode_inputPullUp);
          
-         /* Initialize BUTTON0 pin for CPU0 button handling */
-         IfxPort_setPinMode(BUTTON_0.port, BUTTON_0.pinIndex, IfxPort_Mode_inputPullUp);
-         
-         /* Initialize LED1 pin for CPU0 LED1 control */
-         IfxPort_setPinMode(LED_1.port, LED_1.pinIndex, IfxPort_Mode_outputPushPullGeneral);
-         IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_high);
-         
-         /* Initialize LED process control */
-         LED_PROCESS_ACTIVE = false;        /* Process starts inactive */
-         BUTTON_PRESSED_FLAG = false;       /* No button press initially */
+         /* Initialize LED1 */
+        IfxPort_setPinMode(LED_1.port, LED_1.pinIndex, IfxPort_Mode_outputPushPullGeneral);
+        IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_high);
+        
+        /* Initialize LED2 */
+        IfxPort_setPinMode(LED_2.port, LED_2.pinIndex, IfxPort_Mode_outputPushPullGeneral);
+        IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_high);     
 
         //}
         
@@ -234,8 +243,7 @@ void app_cpu0_button(void)
 /* Toggle LED1 based on enable flag */
 void app_cpu0_led1(void)
 {
-    if (LED1_ENABLE_FLAG)
-    {
-        IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_toggled);
-    }
+
+    IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_toggled);
+
 }
