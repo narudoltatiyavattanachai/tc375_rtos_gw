@@ -51,10 +51,10 @@
 
 /* System-wide Configuration */
 #define BUTTON_DEBOUNCE_COUNT   (5)                /* Number of consecutive readings for debouncing                */
-#define LED2_BLINK_PERIOD_US    (5000000)           /* LED2 blink half period CPU1 turn on at twice period    */
+#define LED2_BLINK_PERIOD_US    (500000)           /* LED2 blink half period CPU1 turn on at twice period    */
 
 /* System-wide Boolean Flags */
-extern volatile IfxPort_State BUTTON_PRESSED_FLAG;
+extern volatile bool BUTTON_PRESSED_FLAG;
 
 /* CPU1/CPU2 Looping Counters */
 extern volatile uint32_t cpu1_loop_count;

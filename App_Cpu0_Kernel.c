@@ -53,11 +53,11 @@ uint32_t cpu0_1000ms_count = 0;
 
 
 /* Button state variables for CPU0 task - hardware pull-up, so default low */
-static IfxPort_State previous_button_state = IfxPort_State_low;
-static uint32_t button_debounce_counter = 0;
+static uint32_t button_debounce_count = 0;
 
 /* Global flag variables */
-volatile IfxPort_State BUTTON_PRESSED_FLAG = IfxPort_State_low;
+volatile bool BUTTON_PRESSED_FLAG = false;
+volatile bool button_already_pressed = false;
 
 /* CPU1/CPU2 looping counters */
 volatile uint32_t cpu1_loop_count = 0;
@@ -74,6 +74,9 @@ volatile bool CPU1_EXECUTION_PROCESS = false;
 volatile bool CPU1_DATA_READY = false;
 volatile bool CPU2_EXECUTION_PROCESS = false;
 volatile bool CPU2_DATA_READY = false;
+
+/* Button handling function */
+
 
 /* Global semaphores for CPU0 */
 SemaphoreHandle_t g_cpu0InitSem = NULL;
@@ -100,8 +103,8 @@ void task_cpu0_init(void *arg)
             if (!initialized)
             {
                 /* Initialize LED process control */
-                LED_PROCESS_ACTIVE = true;        /* Process starts active */
-                BUTTON_PRESSED_FLAG = IfxPort_State_low;       /* No button press initially */
+                LED_PROCESS_ACTIVE = false;        /* Process starts active */
+                BUTTON_PRESSED_FLAG = IfxPort_State_high;       /* No button press initially */
                          
                 /* Initialize BUTTON0 */
                 IfxPort_setPinMode(BUTTON_0.port, BUTTON_0.pinIndex, IfxPort_Mode_inputPullUp);
@@ -133,8 +136,9 @@ void task_cpu0_1ms(void *arg)
         /* Wait for CPU0 tick semaphore */
         if (xSemaphoreTake(g_cpu0TickSem, portMAX_DELAY) == pdTRUE)
         {
-            /* Placeholder for 1ms task functionality */
             cpu0_1ms_count++;
+            /* USER FUNCTIONS */
+
             /* Give semaphore back before finishing */
             xSemaphoreGive(g_cpu0TickSem);
         }
@@ -152,10 +156,9 @@ void task_cpu0_10ms(void *arg)
         /* Wait for CPU0 tick semaphore */
         if (xSemaphoreTake(g_cpu0TickSem, portMAX_DELAY) == pdTRUE)
         {
-            /* 10ms task functionality */
             cpu0_10ms_count++;
             
-            /* Button handling - call app function */
+            /* USER FUNCTIONS */
             app_cpu0_button();
             
             /* Give semaphore back before finishing */
@@ -175,8 +178,11 @@ void task_cpu0_100ms(void *arg)
         /* Wait for CPU0 tick semaphore */
         if (xSemaphoreTake(g_cpu0TickSem, portMAX_DELAY) == pdTRUE)
         {
-            /* Placeholder for 100ms task functionality */
             cpu0_100ms_count++;
+
+            /* USER FUNCTIONS */
+            app_cpu0_led1();
+
             /* Give semaphore back before finishing */
             xSemaphoreGive(g_cpu0TickSem);
         }
@@ -196,8 +202,7 @@ void task_cpu0_1000ms(void *arg)
         {
             cpu0_1000ms_count++;
 
-            /* Toggle LED1 blink */
-            app_cpu0_led1();
+            /* USER FUNCTIONS */
 
             /* Give semaphore back before finishing */
             xSemaphoreGive(g_cpu0TickSem);
@@ -217,21 +222,18 @@ void vApplicationStackOverflowHook_CPU0(TaskHandle_t xTask, char *pcTaskName)
     }
 }
 
-/* Button handling function */
-static bool button_already_pressed = false;
-
 void app_cpu0_button(void)
 {
-    BUTTON_PRESSED_FLAG = IfxPort_getPinState(BUTTON_0.port, BUTTON_0.pinIndex);
+    BUTTON_PRESSED_FLAG = !(IfxPort_getPinState(BUTTON_0.port, BUTTON_0.pinIndex));
 
-    if (BUTTON_PRESSED_FLAG == IfxPort_State_low)  // Button pressed
+    if (BUTTON_PRESSED_FLAG == true)  // Button pressed
     {
-        if (button_debounce_counter < BUTTON_DEBOUNCE_COUNT)
+        if (button_debounce_count < BUTTON_DEBOUNCE_COUNT)
         {
-            button_debounce_counter++;
+            button_debounce_count++;
         }
         
-        if (button_debounce_counter >= BUTTON_DEBOUNCE_COUNT && !button_already_pressed)
+        if (button_debounce_count >= BUTTON_DEBOUNCE_COUNT && !button_already_pressed)
         {
             // Only toggle ONCE per button press
             LED_PROCESS_ACTIVE = !LED_PROCESS_ACTIVE;
@@ -240,10 +242,12 @@ void app_cpu0_button(void)
     }
     else  // Button released
     {
-        button_debounce_counter = 0;
+        button_debounce_count = 0;
         button_already_pressed = false;  // Allow next press
     }
 }
+
+
 
 /* Toggle LED1 - always active */
 void app_cpu0_led1(void)
