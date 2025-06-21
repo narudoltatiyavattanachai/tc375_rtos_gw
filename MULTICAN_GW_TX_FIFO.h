@@ -33,8 +33,9 @@
 #include "Ifx_Types.h"
 #include "IfxMultican_Can.h"
 #include "IfxMultican.h"
-#include "IfxPort.h"                                             /* For GPIO Port Pin Control                        */
-
+#include "IfxPort.h"       
+                                      /* For GPIO Port Pin Control                        */
+#include <stdint.h>
 /*********************************************************************************************************************/
 /*------------------------------------------------------Macros-------------------------------------------------------*/
 /*********************************************************************************************************************/
@@ -42,8 +43,29 @@
                                                                 /* ------------------------------------------------- */
 #define NUMBER_OF_CAN_MESSAGES      7                           /* Define the number of CAN messages to be sent      */
                                                                 /* ------------------------------------------------- */
-#define GTW_SRC_MESSAGE_OBJECT_ID   (IfxMultican_MsgObjId)0     /* Gateway source message object ID                  */
-#define GTW_DST_MESSAGE_OBJECT_ID   (IfxMultican_MsgObjId)1     /* Gateway destination message object ID             */
+// Multi-pair gateway configuration
+
+
+#define MAX_FILTER_IDS_PER_PAIR 4
+
+typedef struct {
+    uint8_t srcNode;                // CAN node index for source (e.g. 0 = CAN0)
+    uint8_t dstNode;                // CAN node index for destination (e.g. 1 = CAN1)
+    IfxMultican_MsgObjId srcMsgObjId; // Base message object ID for source node
+    IfxMultican_MsgObjId dstMsgObjId; // Message object ID for destination node
+    // Place CAN ID filters at the end for clarity
+    uint8_t numFilterIds;           // Number of valid filter IDs in filterIds[]
+    uint32_t filterIds[MAX_FILTER_IDS_PER_PAIR]; // Array of CAN IDs to filter for this pair (one MO per ID)
+} MulticanGwPairConfig;
+
+// ISR plan: One shared ISR for all filtered MOs. ISR identifies pair and filter by node and MO ID.
+
+#define NUM_GW_PAIRS 3
+extern const MulticanGwPairConfig gwPairs[NUM_GW_PAIRS];
+
+
+
+
 #define SLAVE_MESSAGE_OBJECT_ID     (IfxMultican_MsgObjId)2     /* FIFO slave message object ID                      */
 #define SRC_MESSAGE_OBJECT_ID       (IfxMultican_MsgObjId)10    /* Source standard message object ID                 */
 #define DST_MESSAGE_OBJECT_ID       (IfxMultican_MsgObjId)20    /* Destination standard message object ID            */
@@ -58,7 +80,7 @@
 #define INVALID_ID_VALUE            (uint32)0xFFFFFFFF          /* Used to invalidate RX messages ID value           */
 #define INVALID_LENGTH_VALUE        (IfxMultican_DataLengthCode)0   /* Used to invalidate RX messages length value   */
 #define ISR_PRIORITY_CAN_RX         1                           /* Define the CAN RX interrupt priority              */
-#define NUMBER_OF_CAN_NODES         4                           /* Define the number of CAN nodes used in example    */
+#define NUMBER_OF_CAN_NODES         8                           /* Define the number of CAN nodes used in example    */
 #define EXPECTED_CUR_POINTER_VALUE  ( SLAVE_MESSAGE_OBJECT_ID + \
                                         (NUMBER_OF_CAN_MESSAGES % TX_FIFO_SIZE) )   /* Define expected CUR pointer   */
 
@@ -96,8 +118,10 @@ typedef enum
 /*********************************************************************************************************************/
 void canIsrRxHandler(void);
 void initMultican(void);
-void initLed(void);
 void transmitCanMessages(void);
 void verifyCanMessages(void);
+
+/* Node enable/disable configuration: 1 = enable, 0 = disable */
+extern const uint8_t canNodeEnabled[NUMBER_OF_CAN_NODES];
 
 #endif MULTICAN_GW_TX_FIFO_H_ */

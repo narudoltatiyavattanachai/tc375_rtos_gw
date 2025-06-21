@@ -33,6 +33,7 @@
 #include "semphr.h"
 #include "Port/Io/IfxPort_Io.h"
 #include "App_Config.h"
+#include "MULTICAN_GW_TX_FIFO.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -117,6 +118,9 @@ void task_cpu0_init(void *arg)
                 IfxPort_setPinMode(LED_2.port, LED_2.pinIndex, IfxPort_Mode_outputPushPullGeneral);
                 IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_high);
                 
+                /* Initialize MultiCAN Gateway FIFO demo for TC375 */
+                //initMultican();
+
                 initialized = true;
                 xSemaphoreGive(g_cpu0TickSem);
 
