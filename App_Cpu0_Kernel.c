@@ -45,19 +45,12 @@
 /*-------------------------------------------------Global variables--------------------------------------------------*/
 /*********************************************************************************************************************/
 
+uint32_t cpu0_init_count = 0;
 uint32_t cpu0_1ms_count = 0;
 uint32_t cpu0_10ms_count = 0;
 uint32_t cpu0_100ms_count = 0;
 uint32_t cpu0_1000ms_count = 0;
 
-/* Global flag variables */
-volatile bool LED1_ENABLE_FLAG = false;
-volatile bool LED2_ENABLE_FLAG = false;
-volatile bool LED2_BLINK_FLAG = false;
-
-/* LED2 monitoring counters */
-volatile uint32_t led2_cpu1_count = 0;
-volatile uint32_t led2_cpu2_count = 0;
 
 /* Button state variables for CPU0 task */
 static IfxPort_State previous_button_state = IfxPort_State_high;
@@ -72,6 +65,9 @@ void task_cpu0_init(void *arg)
 {
     while (1)
     {
+        /* Increment init task counter */
+        cpu0_init_count++;
+        
         /* Wait for CPU0 init semaphore */
         //if (xSemaphoreTake(g_cpu0InitSem, portMAX_DELAY) == pdTRUE)
         //{
@@ -92,6 +88,10 @@ void task_cpu0_init(void *arg)
          /* Initialize LED1 pin for CPU0 LED1 control */
          IfxPort_setPinMode(LED_1.port, LED_1.pinIndex, IfxPort_Mode_outputPushPullGeneral);
          IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_high);
+         
+         /* Initialize LED process control */
+         LED_PROCESS_ACTIVE = false;        /* Process starts inactive */
+         BUTTON_PRESSED_FLAG = false;       /* No button press initially */
 
         //}
         
@@ -171,7 +171,7 @@ void task_cpu0_1000ms(void *arg)
         //{
             cpu0_1000ms_count++;
 
-            /* Toggle LED1 and LED2 state */
+            /* Toggle LED1 and control LED2 blink */
             app_cpu0_led1();
             app_cpu0_led2();
             
@@ -208,8 +208,19 @@ void app_cpu0_button(void)
         button_debounce_counter++;
         if (button_debounce_counter >= BUTTON_DEBOUNCE_COUNT)
         {
-            /* Button press confirmed - toggle LED2 blink flag */
-            LED2_BLINK_FLAG = !LED2_BLINK_FLAG;
+            /* Button press confirmed - CPU0 controls LED_PROCESS_ACTIVE */
+            if (!LED_PROCESS_ACTIVE)
+            {
+                /* Start LED process - CPU1 and CPU2 will monitor this flag */
+                LED_PROCESS_ACTIVE = true;
+                led_process_count = 0;      /* Reset count on process start */
+            }
+            else
+            {
+                /* Stop LED process - CPU1 and CPU2 will stop accordingly */
+                LED_PROCESS_ACTIVE = false;
+                led_process_count = 0;      /* Reset count on process stop */
+            }
             button_debounce_counter = 0;
         }
     }
@@ -227,5 +238,25 @@ void app_cpu0_led1(void)
     if (LED1_ENABLE_FLAG)
     {
         IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_toggled);
+    }
+}
+
+/* Control LED2 blink via CPU1/CPU2 coordination */
+void app_cpu0_led2(void)
+{
+    if (LED2_BLINK_FLAG)
+    {
+        /* CPU0 starts the LED process that CPU1/CPU2 will execute */
+        if (!LED_PROCESS_ACTIVE)
+        {
+            LED_PROCESS_ACTIVE = true;
+            led_process_count = 0;
+        }
+    }
+    else
+    {
+        /* Stop LED process */
+        LED_PROCESS_ACTIVE = false;
+        led_process_count = 0;
     }
 }

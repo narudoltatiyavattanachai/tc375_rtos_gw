@@ -36,48 +36,41 @@
 /*********************************************************************************************************************/
 /*-------------------------------------------------Global variables--------------------------------------------------*/
 /*********************************************************************************************************************/
-extern uint32_t cpu2_tick_count;
+extern uint32_t cpu2_tick_counter;
 
 /* CPU2 communication logic - now empty, all app logic moved to CPU0 */
 void app_cpu2_led2off(void)
 {
     /* CPU2 LED2 OFF control with balanced state management */
-    if ((cpu2_tick_count % 100000) == 0)
+    if ((cpu2_tick_counter % 100000) == 0)
     {
-        cpu2_tick_count++;
-        
-        /* CPU2 execution conditions: CPU2 ready AND CPU1 complete AND CPU1 not ready */
-        if (CPU2_EXECUTION_READY && CPU1_EXECUTION_COMPLETE && !CPU1_EXECUTION_READY)
+        cpu2_tick_counter++;
+
+        /* CPU2 monitors CPU1_DATA_READY for initialization */
+        if (CPU1_DATA_READY)
         {
-            /* Pre-execution state management */
-            CPU2_EXECUTION_READY = false;      /* Reset CPU2 ready flag */
-            CPU2_EXECUTION_COMPLETE = false;   /* Reset CPU2 completion flag */
-            
-            /* CPU2 main execution: Always turn LED2 OFF */
+            /* Initialize CPU2 for new LED process cycle */
+            CPU2_EXECUTION_PROCESS = true;
+            CPU2_DATA_READY = false;
+
+            CPU1_DATA_READY = false;            /*Set CPU1 data as outdated*/
+
+        }
+                
+        /* CPU2 execution conditions: LED process active AND CPU2 ready AND CPU1 not complete */
+        if (CPU2_EXECUTION_PROCESS)
+        {
+        
+            /* CPU2 main execution: Turn LED2 OFF */
             IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_high);
             cpu2_loop_count++;
-            
-            /* Post-execution state management */
-            CPU2_EXECUTION_COMPLETE = true;    /* Signal CPU2 has completed */
-            CPU1_EXECUTION_COMPLETE = false;   /* Reset CPU1 completion flag */
-        }
         
-        /* CPU2 monitoring: Reset flags when CPU1 completes */
-        if (CPU1_EXECUTION_COMPLETE)
-        {
-            CPU1_EXECUTION_COMPLETE = false;   /* Reset CPU1 completion flag */
-            if (LED_PROCESS_ACTIVE)
-            {
-                CPU2_EXECUTION_READY = true;   /* Ready for next cycle */
-            }
-        }
-        
-        /* CPU2 idle state: Monitor for process state changes */
-        if (!LED_PROCESS_ACTIVE && !CPU1_EXECUTION_COMPLETE)
-        {
-            /* Ensure flags are reset when process is inactive */
-            CPU2_EXECUTION_READY = false;
-            CPU2_EXECUTION_COMPLETE = false;
+            /* Complete CPU2 execution cycle */
+            CPU2_EXECUTION_PROCESS = false;       /* CPU2 completes after CPU1 */
+            CPU2_DATA_READY = true;
+
+
+            led_process_count++;               /* Track LED process cycles */
         }
     }
 }

@@ -36,22 +36,40 @@
 /*********************************************************************************************************************/
 /*-------------------------------------------------Global variables--------------------------------------------------*/
 /*********************************************************************************************************************/
-extern uint32_t cpu1_tick_count;
+extern uint32_t cpu1_tick_counter;
 
-/* CPU1 application logic - now empty, all app logic moved to CPU0 */
-
-/* CPU2 communication logic - now empty, all app logic moved to CPU0 */
+/* CPU1 LED2 ON control with local process management */
 void app_cpu1_led2on(void)
 {
-    /* LED2 ON control - CPU1 turns LED2 on when blink flag is active */
-    if ((cpu1_tick_count % 100000) == 0)
+    /* CPU1 LED2 ON control with local state management */
+    if ((cpu1_tick_counter % 100000) == 0)
     {
-        cpu1_tick_count++;
-        if (LED2_BLINK_FLAG)
+        cpu1_tick_counter++;
+        
+        /* CPU1 monitors LED_PROCESS_ACTIVE for initialization */
+        if (LED_PROCESS_ACTIVE)
         {
-            /* Turn LED2 ON (active low, so set to low) */
-            IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_low);
-            led2_cpu1_count++;
+            /* Initialize CPU1 for new LED process cycle */
+            CPU1_EXECUTION_PROCESS = true;       /* CPU1 starts first */
+            CPU1_DATA_READY = false;
+            
+            CPU2_DATA_READY = false;            /*Set CPU2 data as outdated*/
         }
+        
+        /* CPU1 execution conditions: LED process active AND CPU1 ready AND CPU2 not complete */
+        if (CPU1_EXECUTION_PROCESS)
+        {
+
+            /* CPU1 main execution: Turn LED2 ON */
+            IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_low);
+            cpu1_loop_count++;
+
+            /* Initialize CPU1 for new LED process cycle */
+            CPU1_EXECUTION_PROCESS = false;       /* CPU1 starts first */
+            CPU1_DATA_READY = true;
+
+            led_process_count++;               /* Track LED process cycles */
+        }
+
     }
 }
