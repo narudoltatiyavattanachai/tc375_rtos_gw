@@ -14,10 +14,10 @@ This project implements a TC375 multi-CPU RTOS gateway system with the following
 - **Role**: System orchestrator, user interface handler, command dispatcher
 - **Tasks**:
   - `task_cpu0_init` (1ms): Hardware initialization and pin configuration
-  - `task_cpu0_1ms` (1ms): Placeholder for high-frequency operations
+  - `task_cpu0_1ms` (1ms): User functions placeholder for high-frequency operations
   - `task_cpu0_10ms` (10ms): Button handling and user input processing
-  - `task_cpu0_100ms` (100ms): Placeholder for medium-frequency operations
-  - `task_cpu0_1000ms` (1000ms): LED control and status management
+  - `task_cpu0_100ms` (100ms): LED1 control and medium-frequency operations
+  - `task_cpu0_1000ms` (1000ms): User functions placeholder for low-frequency operations
 
 ### CPU1 & CPU2 - Compute Nodes
 - **Operating System**: Bare-metal (no OS)
@@ -31,9 +31,10 @@ This project implements a TC375 multi-CPU RTOS gateway system with the following
 ### Shared Memory Architecture
 - **LMU (Local Memory Unit)**: Used for command/data exchange between CPUs
 - **Global Flags**: Shared boolean flags for state synchronization
-  - `LED1_ENABLE_FLAG`: Controls LED1 operation
-  - `LED2_ENABLE_FLAG`: Controls LED2 operation  
-  - `LED2_BLINK_FLAG`: Controls LED2 blinking behavior
+  - `BUTTON_PRESSED_FLAG`: Current button state (true when pressed)
+  - `LED_PROCESS_ACTIVE`: Controls LED2 blinking process activation
+  - `CPU1_EXECUTION_PROCESS` / `CPU2_EXECUTION_PROCESS`: CPU execution status
+  - `CPU1_DATA_READY` / `CPU2_DATA_READY`: Data synchronization flags
 
 ### Command Flow
 1. CPU0 processes user input (button presses)
@@ -64,9 +65,11 @@ This project implements a TC375 multi-CPU RTOS gateway system with the following
 5. **Status Reporting**: All CPUs update counters for system monitoring
 
 ### LED Control Logic
-- **LED1**: Direct control by CPU0 based on enable flag
-- **LED2**: Coordinated control by CPU1 (ON) and CPU2 (OFF) based on blink flag
+- **LED1**: Direct control by CPU0, toggles every 100ms continuously
+- **LED2**: Coordinated control by CPU1 (ON) and CPU2 (OFF) based on `LED_PROCESS_ACTIVE` flag
+- **Button Control**: BUTTON_0 (P00.7) toggles `LED_PROCESS_ACTIVE` state with 5-count debouncing
 - **Active Low Logic**: LEDs are active low (low = ON, high = OFF)
+- **Blink Period**: LED2 blinks at 500ms intervals when process is active
 
 ## Development Guidelines
 
@@ -109,7 +112,8 @@ This project implements a TC375 multi-CPU RTOS gateway system with the following
 ### Task Frequencies
 - CPU0 tasks run at fixed intervals (1ms, 10ms, 100ms, 1000ms)
 - CPU1/CPU2 run in tight polling loops for minimal latency
-- Button debouncing uses 10ms sampling with configurable count threshold
+- Button debouncing uses 10ms sampling with 5-count threshold (50ms debounce time)
+- LED2 blink period: 500ms (LED2_BLINK_PERIOD_US = 500000)
 
 ### Memory Usage
 - CPU0: FreeRTOS kernel + task stacks + application data
