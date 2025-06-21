@@ -52,12 +52,13 @@ uint32_t cpu0_100ms_count = 0;
 uint32_t cpu0_1000ms_count = 0;
 
 
-/* Button state variables for CPU0 task */
-static IfxPort_State previous_button_state = IfxPort_State_high;
+/* Button state variables for CPU0 task - hardware pull-up, so default low */
+static IfxPort_State previous_button_state = IfxPort_State_low;
 static uint32_t button_debounce_counter = 0;
+static bool button_already_pressed = false;
 
 /* Global flag variables */
-volatile bool BUTTON_PRESSED_FLAG = false;
+volatile IfxPort_State BUTTON_PRESSED_FLAG = IfxPort_State_low;
 
 /* CPU1/CPU2 looping counters */
 volatile uint32_t cpu1_loop_count = 0;
@@ -101,7 +102,7 @@ void task_cpu0_init(void *arg)
             {
                 /* Initialize LED process control */
                 LED_PROCESS_ACTIVE = true;        /* Process starts active */
-                BUTTON_PRESSED_FLAG = false;       /* No button press initially */
+                BUTTON_PRESSED_FLAG = IfxPort_State_low;       /* No button press initially */
                          
                 /* Initialize BUTTON0 */
                 IfxPort_setPinMode(BUTTON_0.port, BUTTON_0.pinIndex, IfxPort_Mode_inputPullUp);
@@ -220,44 +221,28 @@ void vApplicationStackOverflowHook_CPU0(TaskHandle_t xTask, char *pcTaskName)
 /* Button handling function */
 void app_cpu0_button(void)
 {
-    IfxPort_State current_button_state = IfxPort_getPinState(BUTTON_0.port, BUTTON_0.pinIndex);
-    
-    /* Button debouncing logic - improved version */
-    if (current_button_state == IfxPort_State_low)
+    BUTTON_PRESSED_FLAG = IfxPort_getPinState(BUTTON_0.port, BUTTON_0.pinIndex);
+
+    if (BUTTON_PRESSED_FLAG == IfxPort_State_low)  // Button pressed
     {
-        /* Button is pressed, increment debounce counter */
         if (button_debounce_counter < BUTTON_DEBOUNCE_COUNT)
         {
             button_debounce_counter++;
         }
         
-        /* Check if button press is confirmed after debouncing */
-        if (button_debounce_counter >= BUTTON_DEBOUNCE_COUNT && previous_button_state == IfxPort_State_high)
+        if (button_debounce_counter >= BUTTON_DEBOUNCE_COUNT && !button_already_pressed)
         {
-            /* Button press confirmed - CPU0 controls LED_PROCESS_ACTIVE */
-            if (!LED_PROCESS_ACTIVE)
-            {
-                /* Start LED process - CPU1 and CPU2 will monitor this flag */
-                LED_PROCESS_ACTIVE = true;
-                led_process_count = 0;      /* Reset count on process start */
-            }
-            else
-            {
-                /* Stop LED process - CPU1 and CPU2 will stop accordingly */
-                LED_PROCESS_ACTIVE = false;
-                led_process_count = 0;      /* Reset count on process stop */
-            }
+            // Only toggle ONCE per button press
+            LED_PROCESS_ACTIVE = !LED_PROCESS_ACTIVE;
+            button_already_pressed = true;
         }
     }
-    else
+    else  // Button released
     {
-        /* Button is released, reset debounce counter */
         button_debounce_counter = 0;
+        button_already_pressed = false;  // Allow next press
     }
-    
-    previous_button_state = current_button_state;
 }
-
 /* Toggle LED1 - always active */
 void app_cpu0_led1(void)
 {
