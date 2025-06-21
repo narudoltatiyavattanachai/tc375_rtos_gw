@@ -171,10 +171,9 @@ void task_cpu0_1000ms(void *arg)
         //{
             cpu0_1000ms_count++;
 
-            /* Toggle LED1 and control LED2 blink */
+            /* Toggle LED1 blink */
             app_cpu0_led1();
-            app_cpu0_led2();
-            
+
             /* Give semaphore back before finishing */
             //xSemaphoreGive(g_cpu0TickSem);
         //}
@@ -238,25 +237,5 @@ void app_cpu0_led1(void)
     if (LED1_ENABLE_FLAG)
     {
         IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_toggled);
-    }
-}
-
-/* Control LED2 blink via CPU1/CPU2 coordination */
-void app_cpu0_led2(void)
-{
-    if (LED2_BLINK_FLAG)
-    {
-        /* CPU0 starts the LED process that CPU1/CPU2 will execute */
-        if (!LED_PROCESS_ACTIVE)
-        {
-            LED_PROCESS_ACTIVE = true;
-            led_process_count = 0;
-        }
-    }
-    else
-    {
-        /* Stop LED process */
-        LED_PROCESS_ACTIVE = false;
-        led_process_count = 0;
     }
 }

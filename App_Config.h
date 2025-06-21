@@ -82,7 +82,6 @@ extern volatile bool LED2_BLINK_FLAG;
 
 /* CPU0 Application Functions */
 void app_cpu0_led1(void);
-void app_cpu0_led2(void);
 void app_cpu0_button(void);
 
 /* CPU0 Task Functions */
