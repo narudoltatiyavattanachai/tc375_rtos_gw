@@ -57,10 +57,15 @@ void task_cpu0_init(void *arg)
         if (xSemaphoreTake(g_cpu0InitSem, portMAX_DELAY) == pdTRUE)
         {
         
-        /* Setup the port/pin connected to BUTTON1 as input with pull-up resistor
-         * Purpose: Configure BUTTON1 pin (P00.7) as input to read button state
+        /* Setup the port/pin connected to LED2 as general push-pull output
+         * Purpose: Configure LED2 pin (P00.6) as output to control LED state
          */
-         IfxPort_setPinMode(BUTTON_0.port, BUTTON_0.pinIndex, IfxPort_Mode_inputPullUp);
+         IfxPort_setPinMode(LED_2.port, LED_2.pinIndex, IfxPort_Mode_outputPushPullGeneral);
+
+         /* Turn off LED2 initially (LED is active low)
+          * Purpose: Ensure LED2 starts in known OFF state during system initialization
+          */
+         IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_high);
 
         }
         
@@ -134,7 +139,8 @@ void task_cpu0_1000ms(void *arg)
         /* Wait for CPU0 tick semaphore */
         if (xSemaphoreTake(g_cpu0TickSem, portMAX_DELAY) == pdTRUE)
         {
-            /* Placeholder for 1000ms task functionality */
+            /* Toggle LED2 state */
+            app_cpu0_led();
             
             /* Give semaphore back before finishing */
             xSemaphoreGive(g_cpu0TickSem);
@@ -153,50 +159,12 @@ void vApplicationStackOverflowHook_CPU0(TaskHandle_t xTask, char *pcTaskName)
         __nop();
     }
 }
-/* Button polling, debouncing, and tick semaphore signaling */
-void app_cpu0_button(void)
+
+/* Toggle LED2 based on enable flag */
+void app_cpu0_led(void)
 {
-    IfxPort_State current_state = IfxPort_State_high;
-    IfxPort_State previous_state = IfxPort_State_high;
-    uint32_t debounce_counter = 0;
-
-    /* Read current button state for polling-based control */
-    current_state = IfxPort_getPinState(BUTTON_0.port, BUTTON_0.pinIndex);
-            
-    /* Button is pressed when state is low (active low) */
-    if (current_state == IfxPort_State_low)
+    if (LED2_ENABLE_FLAG)
     {
-        /* Button is currently pressed */
-        if (previous_state == IfxPort_State_high)
-        {
-            /* Falling edge detected - start debouncing */
-            debounce_counter = 1;
-        }
-        else if (debounce_counter > 0 && debounce_counter < BUTTON_DEBOUNCE_COUNT)
-        {
-            /* Continue debouncing */
-            debounce_counter++;
-        }
-        else if (debounce_counter == BUTTON_DEBOUNCE_COUNT)
-        {
-            /* Button press confirmed after debouncing - give tick semaphore to allow LED tasks to proceed */
-            debounce_counter = 0; /* Reset to prevent multiple counts */
-            
-            /* Button press confirmed - give tick semaphore to allow LED tasks to proceed */
-            //g_button_press_count++;
-                    
-            /* Give signal to toggle CPU1 and CPU2 LED tasks */
-            LED1_ENABLE_FLAG = !LED1_ENABLE_FLAG;
-            LED2_ENABLE_FLAG = !LED2_ENABLE_FLAG;
-        }
+        IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_toggled);
     }
-    else
-    {
-        /* Button is not pressed - reset debounce counter */
-        debounce_counter = 0;
-    }
-            
-    /* Update previous state for edge detection */
-    previous_state = current_state;
-
 }

@@ -70,7 +70,7 @@ extern volatile bool LED2_ENABLE_FLAG;
 /*------------------------------------------------- CPU0 Section ---------------------------------------------------*/
 /*********************************************************************************************************************/
 /* Function prototypes */
-void app_cpu0_button(void);
+void app_cpu0_led(void);
 
 /* CPU0 Task Functions */
 void task_cpu0_init(void *arg);                    /* CPU0 initialization task running at 1ms                     */
@@ -122,9 +122,8 @@ void task_cpu1_1000ms(void *arg);                  /* CPU1 1000ms placeholder ta
 /*********************************************************************************************************************/
 /*------------------------------------------------- CPU2 Section ---------------------------------------------------*/
 /*********************************************************************************************************************/
-
 /* Function prototypes */
-void app_cpu2_led(void);
+void app_cpu2_button(void);
 
 /* CPU2 Task Functions */
 void task_cpu2_init(void *arg);                    /* CPU2 initialization task running at 1ms                     */
