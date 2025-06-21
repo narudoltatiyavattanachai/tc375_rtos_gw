@@ -51,7 +51,7 @@
 
 /* System-wide Configuration */
 #define BUTTON_DEBOUNCE_COUNT   (5)                /* Number of consecutive readings for debouncing                */
-#define LED2_BLINK_PERIOD       (500000)           /* LED2 blink period: 500ms ON + 500ms OFF = 1 second cycle    */
+#define LED2_BLINK_PERIOD       (5000000)           /* LED2 blink period: 500ms ON + 500ms OFF = 1 second cycle    */
 
 /* System-wide Boolean Flags */
 extern volatile bool BUTTON_PRESSED_FLAG;
