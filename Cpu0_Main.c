@@ -92,8 +92,8 @@ void core0_main(void)
     cpu0_main_count++; //Step No. 6
 
     /* Start CPU1 and CPU2 */
-    IfxCpu_startCore(&MODULE_CPU1, &core1_main);
-    IfxCpu_startCore(&MODULE_CPU2, &core2_main);
+    IfxCpu_startCore(&MODULE_CPU1, (uint32)core1_main);
+    IfxCpu_startCore(&MODULE_CPU2, (uint32)core2_main);
 
     /* Wait for CPU sync event */
     IfxCpu_emitEvent(&g_cpuSyncEvent);
