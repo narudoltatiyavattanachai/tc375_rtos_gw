@@ -222,15 +222,17 @@ void app_cpu0_button(void)
 {
     IfxPort_State current_button_state = IfxPort_getPinState(BUTTON_0.port, BUTTON_0.pinIndex);
     
-    /* Button debouncing logic */
-    if (current_button_state == IfxPort_State_low && previous_button_state == IfxPort_State_high)
+    /* Button debouncing logic - improved version */
+    if (current_button_state == IfxPort_State_low)
     {
-        button_debounce_counter = 1;
-    }
-    else if (current_button_state == IfxPort_State_low && button_debounce_counter > 0)
-    {
-        button_debounce_counter++;
-        if (button_debounce_counter >= BUTTON_DEBOUNCE_COUNT)
+        /* Button is pressed, increment debounce counter */
+        if (button_debounce_counter < BUTTON_DEBOUNCE_COUNT)
+        {
+            button_debounce_counter++;
+        }
+        
+        /* Check if button press is confirmed after debouncing */
+        if (button_debounce_counter >= BUTTON_DEBOUNCE_COUNT && previous_button_state == IfxPort_State_high)
         {
             /* Button press confirmed - CPU0 controls LED_PROCESS_ACTIVE */
             if (!LED_PROCESS_ACTIVE)
@@ -245,11 +247,11 @@ void app_cpu0_button(void)
                 LED_PROCESS_ACTIVE = false;
                 led_process_count = 0;      /* Reset count on process stop */
             }
-            button_debounce_counter = 0;
         }
     }
-    else if (current_button_state == IfxPort_State_high)
+    else
     {
+        /* Button is released, reset debounce counter */
         button_debounce_counter = 0;
     }
     
