@@ -44,6 +44,15 @@
 /* Configuration macros are now defined in App_Config.h for centralized management */
 
 /*********************************************************************************************************************/
+/*-------------------------------------------------Global variables--------------------------------------------------*/
+/*********************************************************************************************************************/
+
+uint32_t cpu2_1ms_count = 0;
+uint32_t cpu2_10ms_count = 0;
+uint32_t cpu2_100ms_count = 0;
+uint32_t cpu2_1000ms_count = 0;
+
+/*********************************************************************************************************************/
 /*---------------------------------------------Function Implementations----------------------------------------------*/
 /*********************************************************************************************************************/
 
@@ -52,27 +61,27 @@
 void task_cpu2_init(void *arg)
 {
     /* Wait for CPU2 initialization semaphore before proceeding */
-    if (xSemaphoreTake(g_cpu2InitSem, portMAX_DELAY) == pdTRUE)
-    {
+    // if (xSemaphoreTake(g_cpu2InitSem, portMAX_DELAY) == pdTRUE)
+    // {
 
         /* Setup the port/pin connected to BUTTON1 as input with pull-up resistor
          * Purpose: Configure BUTTON1 pin (P00.7) as input to read button state
          */
          IfxPort_setPinMode(BUTTON_0.port, BUTTON_0.pinIndex, IfxPort_Mode_inputPullUp);
 
-    }
+    // }
     
     while (1)
     {
         /* Wait for CPU2 init semaphore */
-        if (xSemaphoreTake(g_cpu2InitSem, portMAX_DELAY) == pdTRUE)
-        {
+        // if (xSemaphoreTake(g_cpu2InitSem, portMAX_DELAY) == pdTRUE)
+        // {
             /* Give CPU2 tick semaphore to allow other tasks to proceed */
-            if (g_cpu2TickSem != NULL)
-            {
-                xSemaphoreGive(g_cpu2TickSem);
-            }
-        }
+            // if (g_cpu2TickSem != NULL)
+            // {
+            //     xSemaphoreGive(g_cpu2TickSem);
+            // }
+        // }
         
         /* Run at 1ms interval */
         vTaskDelay(pdMS_TO_TICKS(1));
@@ -85,13 +94,14 @@ void task_cpu2_1ms(void *arg)
     while (1)
     {
         /* Wait for CPU2 tick semaphore */
-        if (xSemaphoreTake(g_cpu2TickSem, portMAX_DELAY) == pdTRUE)
-        {
+        // if (xSemaphoreTake(g_cpu2TickSem, portMAX_DELAY) == pdTRUE)
+        // {
             /* Placeholder for 1ms task functionality */
+            cpu2_1ms_count++;
             
             /* Give semaphore back before finishing */
-            xSemaphoreGive(g_cpu2TickSem);
-        }
+            // xSemaphoreGive(g_cpu2TickSem);
+        // }
         
         /* Task period: 1ms */
         vTaskDelay(pdMS_TO_TICKS(1));
@@ -104,14 +114,15 @@ void task_cpu2_10ms(void *arg)
     while (1)
     {
         /* Wait for CPU2 tick semaphore */
-        if (xSemaphoreTake(g_cpu2TickSem, portMAX_DELAY) == pdTRUE)
-        {
+        // if (xSemaphoreTake(g_cpu2TickSem, portMAX_DELAY) == pdTRUE)
+        // {
             /* Placeholder for 10ms task functionality */
+            cpu2_10ms_count++;
             app_cpu2_button();
 
             /* Give semaphore back before finishing */
-            xSemaphoreGive(g_cpu2TickSem);
-        }
+            // xSemaphoreGive(g_cpu2TickSem);
+        // }
         
         /* Task period: 10ms */
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -124,13 +135,14 @@ void task_cpu2_100ms(void *arg)
     while (1)
     {
         /* Wait for CPU2 tick semaphore */
-        if (xSemaphoreTake(g_cpu2TickSem, portMAX_DELAY) == pdTRUE)
-        {
+        // if (xSemaphoreTake(g_cpu2TickSem, portMAX_DELAY) == pdTRUE)
+        // {
             /* Placeholder for 100ms task functionality */
+            cpu2_100ms_count++;
       
             /* Give semaphore back before finishing */
-            xSemaphoreGive(g_cpu2TickSem);
-        }
+            // xSemaphoreGive(g_cpu2TickSem);
+        // }
         
         /* Task period: 100ms */
         vTaskDelay(pdMS_TO_TICKS(100));
@@ -143,13 +155,14 @@ void task_cpu2_1000ms(void *arg)
     while (1)
     {
         /* Wait for CPU2 tick semaphore */
-        if (xSemaphoreTake(g_cpu2TickSem, portMAX_DELAY) == pdTRUE)
-        {
+        // if (xSemaphoreTake(g_cpu2TickSem, portMAX_DELAY) == pdTRUE)
+        // {
             /* Placeholder for 1000ms task functionality */
+            cpu2_1000ms_count++;
          
             /* Give semaphore back before finishing */
-            xSemaphoreGive(g_cpu2TickSem);
-        }
+            // xSemaphoreGive(g_cpu2TickSem);
+        // }
         
         /* Task period: 1000ms */
         vTaskDelay(pdMS_TO_TICKS(1000));

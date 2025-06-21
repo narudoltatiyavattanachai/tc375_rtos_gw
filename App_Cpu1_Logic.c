@@ -44,6 +44,15 @@
 /* Configuration macros are now defined in App_Config.h for centralized management */
 
 /*********************************************************************************************************************/
+/*-------------------------------------------------Global variables--------------------------------------------------*/
+/*********************************************************************************************************************/
+
+uint32_t cpu1_1ms_count = 0;
+uint32_t cpu1_10ms_count = 0;
+uint32_t cpu1_100ms_count = 0;
+uint32_t cpu1_1000ms_count = 0;
+
+/*********************************************************************************************************************/
 /*---------------------------------------------Function Implementations----------------------------------------------*/
 /*********************************************************************************************************************/
 
@@ -52,8 +61,8 @@
 void task_cpu1_init(void *arg)
 {
     /* Wait for CPU1 initialization semaphore before proceeding */
-    if (xSemaphoreTake(g_cpu1InitSem, portMAX_DELAY) == pdTRUE)
-    {
+    // if (xSemaphoreTake(g_cpu1InitSem, portMAX_DELAY) == pdTRUE)
+    // {
         /* Setup the port/pin connected to LED1 to general output mode push-pull.
          * Purpose: Configure LED1 pin (P00.5) as output to control LED state
          */
@@ -63,19 +72,19 @@ void task_cpu1_init(void *arg)
          * Purpose: Ensure LED1 starts in known OFF state during system initialization
          */
         IfxPort_setPinState(LED_1.port, LED_1.pinIndex, IfxPort_State_high);
-    }
+    // }
     
     while (1)
     {
         /* Wait for CPU1 init semaphore */
-        if (xSemaphoreTake(g_cpu1InitSem, portMAX_DELAY) == pdTRUE)
-        {
+        // if (xSemaphoreTake(g_cpu1InitSem, portMAX_DELAY) == pdTRUE)
+        // {
             /* Give CPU1 tick semaphore to allow other tasks to proceed */
-            if (g_cpu1TickSem != NULL)
-            {
-                xSemaphoreGive(g_cpu1TickSem);
-            }
-        }
+            // if (g_cpu1TickSem != NULL)
+            // {
+            //     xSemaphoreGive(g_cpu1TickSem);
+            // }
+        // }
         
         /* Run at 1ms interval */
         vTaskDelay(pdMS_TO_TICKS(1));
@@ -88,13 +97,14 @@ void task_cpu1_1ms(void *arg)
     while (1)
     {
         /* Wait for CPU1 tick semaphore */
-        if (xSemaphoreTake(g_cpu1TickSem, portMAX_DELAY) == pdTRUE)
-        {
+        // if (xSemaphoreTake(g_cpu1TickSem, portMAX_DELAY) == pdTRUE)
+        // {
             /* Placeholder for 1ms task functionality */
+            cpu1_1ms_count++;
             
             /* Give semaphore back before finishing */
-            xSemaphoreGive(g_cpu1TickSem);
-        }
+            // xSemaphoreGive(g_cpu1TickSem);
+        // }
         
         /* Task period: 1ms */
         vTaskDelay(pdMS_TO_TICKS(1));
@@ -107,13 +117,14 @@ void task_cpu1_10ms(void *arg)
     while (1)
     {
         /* Wait for CPU1 tick semaphore */
-        if (xSemaphoreTake(g_cpu1TickSem, portMAX_DELAY) == pdTRUE)
-        {
+        // if (xSemaphoreTake(g_cpu1TickSem, portMAX_DELAY) == pdTRUE)
+        // {
             /* Placeholder for 10ms task functionality */
+            cpu1_10ms_count++;
             
             /* Give semaphore back before finishing */
-            xSemaphoreGive(g_cpu1TickSem);
-        }
+            // xSemaphoreGive(g_cpu1TickSem);
+        // }
         
         /* Task period: 10ms */
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -126,14 +137,15 @@ void task_cpu1_100ms(void *arg)
     while (1)
     {
         /* Wait for CPU1 tick semaphore */
-        if (xSemaphoreTake(g_cpu1TickSem, portMAX_DELAY) == pdTRUE)
-        {
+        // if (xSemaphoreTake(g_cpu1TickSem, portMAX_DELAY) == pdTRUE)
+        // {
             /* Toggle LED1 state */
+            cpu1_100ms_count++;
             app_cpu1_led();
             
             /* Give semaphore back before finishing */
-            xSemaphoreGive(g_cpu1TickSem);
-        }
+            // xSemaphoreGive(g_cpu1TickSem);
+        // }
         
         /* Task period: 100ms */
         vTaskDelay(pdMS_TO_TICKS(100));
@@ -146,13 +158,14 @@ void task_cpu1_1000ms(void *arg)
     while (1)
     {
         /* Wait for CPU1 tick semaphore */
-        if (xSemaphoreTake(g_cpu1TickSem, portMAX_DELAY) == pdTRUE)
-        {
+        // if (xSemaphoreTake(g_cpu1TickSem, portMAX_DELAY) == pdTRUE)
+        // {
             /* Placeholder for 1000ms task functionality */
+            cpu1_1000ms_count++;
             
             /* Give semaphore back before finishing */
-            xSemaphoreGive(g_cpu1TickSem);
-        }
+            // xSemaphoreGive(g_cpu1TickSem);
+        // }
         
         /* Task period: 1000ms */
         vTaskDelay(pdMS_TO_TICKS(1000));
