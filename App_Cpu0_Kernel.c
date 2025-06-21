@@ -115,6 +115,7 @@ void task_cpu0_init(void *arg)
                 IfxPort_setPinState(LED_2.port, LED_2.pinIndex, IfxPort_State_high);
                 
                 initialized = true;
+                xSemaphoreGive(g_cpu0TickSem);
             }
         }
         

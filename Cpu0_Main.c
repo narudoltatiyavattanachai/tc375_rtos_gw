@@ -62,17 +62,15 @@ void core0_main(void)
     cpu0_main_count++; //Step No. 2
 
     /* Create init semaphores for each CPU0 */
-    // g_cpu0InitSem = xSemaphoreCreateBinary();
-    // g_cpu1InitSem = xSemaphoreCreateBinary();
-    // g_cpu2InitSem = xSemaphoreCreateBinary();
+    g_cpu0InitSem = xSemaphoreCreateBinary();
+    g_cpu0TickSem = xSemaphoreCreateBinary();
 
     cpu0_main_count++; //Step No. 3
 
     /* Make each init semaphore available exactly once */
-    // xSemaphoreGive(g_cpu0InitSem);
-    // xSemaphoreGive(g_cpu1InitSem);
-    // xSemaphoreGive(g_cpu2InitSem);
+    xSemaphoreGive(g_cpu0InitSem);
     
+
     cpu0_main_count++; //Step No. 4
 
 
