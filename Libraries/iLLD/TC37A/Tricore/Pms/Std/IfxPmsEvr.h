@@ -3,7 +3,7 @@
  * \brief PMS  basic functionality
  * \ingroup IfxLld_Pms
  *
- * \version iLLD_1_0_1_16_0_1
+ * \version iLLD_1_0_1_17_0
  * \copyright Copyright (c) 2022 Infineon Technologies AG. All rights reserved.
  *
  *
@@ -922,6 +922,8 @@ IFX_INLINE uint8 IfxPmsEvr_getPrimaryAdcSwdResult(Ifx_PMS *pms)
 #pragma optimize L
 #elif defined(__HIGHTEC__)
 #pragma GCC optimize ("-O2")
+#elif defined(__GNUC__) && !defined(__HIGHTEC__)
+#pragma GCC optimize ("-O2")
 #endif
 IFX_INLINE boolean IfxPmsEvr_runInitSequence(const IfxPmsEvr_initSequence *const sequence)
 {
@@ -981,6 +983,8 @@ IFX_INLINE boolean IfxPmsEvr_runInitSequence(const IfxPmsEvr_initSequence *const
 #if defined(__TASKING__)
 #pragma endoptimize
 #elif defined(__HIGHTEC__)
+#pragma GCC reset_options
+#elif defined(__GNUC__) && !defined(__HIGHTEC__)
 #pragma GCC reset_options
 #endif
 

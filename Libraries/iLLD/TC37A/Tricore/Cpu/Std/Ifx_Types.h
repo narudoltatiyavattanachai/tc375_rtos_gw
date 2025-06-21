@@ -2,7 +2,7 @@
  * \file Ifx_Types.h
  * \brief This files defines all types used by the IFX HAL and libraries
  *
- * \version iLLD_1_0_1_16_0_1
+ * \version iLLD_1_0_1_17_0
  * \copyright Copyright (c) 2018 Infineon Technologies AG. All rights reserved.
  *
  *
@@ -191,6 +191,9 @@ typedef enum
 
 #elif defined(__HIGHTEC__)
 #include "Ifx_TypesGnuc.h"
+
+#elif defined(__GNUC__) && !defined(__HIGHTEC__)
+#include "Ifx_TypesGcc.h"
 
 #elif defined(__ghs__)
 #include "Ifx_TypesGhs.h"

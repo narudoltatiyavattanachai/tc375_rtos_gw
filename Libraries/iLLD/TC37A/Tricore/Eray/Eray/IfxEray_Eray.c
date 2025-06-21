@@ -2,8 +2,8 @@
  * \file IfxEray_Eray.c
  * \brief ERAY ERAY details
  *
- * \version iLLD_1_0_1_16_0_1
- * \copyright Copyright (c) 2022 Infineon Technologies AG. All rights reserved.
+ * \version iLLD_1_0_1_17_0
+ * \copyright Copyright (c) 2023 Infineon Technologies AG. All rights reserved.
  *
  *
  *
@@ -164,8 +164,11 @@ void IfxEray_Eray_Node_init(IfxEray_Eray *eray, const IfxEray_Eray_NodeConfig *c
         }
     }
 
-    // set the Communication Controller to ready state
-    IfxEray_setPocReady(eraySFR);
+    if (config->loopbackMode == FALSE)
+    {
+        // set the Communication Controller to ready state
+        IfxEray_setPocReady(eraySFR);
+    }
 }
 
 
@@ -327,7 +330,8 @@ void IfxEray_Eray_Node_initConfig(IfxEray_Eray_NodeConfig *config)
                 },
             },
         },
-        .pins                                       = NULL_PTR
+        .pins         = NULL_PTR,
+        .loopbackMode = FALSE
     };
 
     *config = nodeConfig;

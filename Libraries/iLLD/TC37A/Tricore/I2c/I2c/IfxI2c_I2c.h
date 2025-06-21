@@ -3,7 +3,7 @@
  * \brief I2C I2C details
  * \ingroup IfxLld_I2c
  *
- * \version iLLD_1_0_1_16_0_1
+ * \version iLLD_1_0_1_17_0
  * \copyright Copyright (c) 2023 Infineon Technologies AG. All rights reserved.
  *
  *
@@ -299,10 +299,12 @@ typedef struct
  */
 typedef struct
 {
-    Ifx_I2C               *i2c;            /**< \brief Module Pointer */
-    float32                baudrate;       /**< \brief Baudrate */
-    IFX_CONST IfxI2c_Pins *pins;           /**< \brief Pins */
-    IfxI2c_Mode            mode;           /**< \brief Speed Mode */
+    Ifx_I2C               *i2c;                  /**< \brief Module Pointer */
+    float32                baudrate;             /**< \brief Baudrate */
+    IFX_CONST IfxI2c_Pins *pins;                 /**< \brief Pins */
+    IfxI2c_Mode            mode;                 /**< \brief Speed Mode */
+    IfxI2c_MasterNotSlave  peripheralMode;       /**< \brief master/not slave */
+    IfxI2c_Config          addrFifoCfg;          /**< \brief addr and fifo cfg */
 } IfxI2c_I2c_Config;
 
 /** \brief Structure with slave device data
@@ -320,11 +322,10 @@ typedef struct
  */
 typedef struct
 {
-    IfxI2c_I2c        *i2c;                       /**< \brief Module Pointer */
-    uint16             deviceAddress;             /**< \brief the slave device's address */
-    IfxI2c_AddressMode addressMode;               /**< \brief slave device's address (7 or 10 bits) */
-    IfxI2c_Mode        speedMode;                 /**< \brief slave device in Standard/Fast or High Speed mode. */
-    boolean            enableRepeatedStart;       /**< \brief TRUE: Stop is not generated FALSE: Default (Stop is generated at the end of read/write) */
+    IfxI2c_I2c        *i2c;                 /**< \brief Module Pointer */
+    uint16             deviceAddress;       /**< \brief the slave device's address */
+    IfxI2c_AddressMode addressMode;         /**< \brief slave device's address (7 or 10 bits) */
+    IfxI2c_Mode        speedMode;           /**< \brief slave device in Standard/Fast or High Speed mode. */
 } IfxI2c_I2c_deviceConfig;
 
 /** \} */
@@ -376,6 +377,7 @@ IFX_EXTERN void IfxI2c_I2c_initDeviceConfig(IfxI2c_I2c_deviceConfig *i2cDeviceCo
 IFX_EXTERN void IfxI2c_I2c_initModule(IfxI2c_I2c *i2c, const IfxI2c_I2c_Config *config);
 
 /** \brief reads the I2c device
+ * Note: IfxI2c_I2c_read is the older API which is maintain for backward compatibility with SOCV /VP user-cases
  *
  * A coding example can be found in \ref IfxLld_I2c_I2c_Usage
  *
@@ -383,6 +385,7 @@ IFX_EXTERN void IfxI2c_I2c_initModule(IfxI2c_I2c *i2c, const IfxI2c_I2c_Config *
 IFX_EXTERN IfxI2c_I2c_Status IfxI2c_I2c_read(IfxI2c_I2c_Device *i2cDevice, volatile uint8 *data, Ifx_SizeT size);
 
 /** \brief writes to the I2c device
+ * Note: IfxI2c_I2c_write is the older API which is maintain for backward compatibility with SOCV /VP user-cases
  *
  * A coding example can be found in \ref IfxLld_I2c_I2c_Usage
  *
@@ -391,4 +394,31 @@ IFX_EXTERN IfxI2c_I2c_Status IfxI2c_I2c_write(IfxI2c_I2c_Device *i2cDevice, vola
 
 /** \} */
 
+/******************************************************************************/
+/*-------------------------Global Function Prototypes-------------------------*/
+/******************************************************************************/
+
+/** \brief reads the I2c device
+ * Note: IfxI2c_I2c_read2  is the newly designed API which support I2C RESTART mode
+ * \param i2cDevice Device Handler
+ * \param data data pointer
+ * \param size size of data
+ * \return status
+ */
+IFX_EXTERN IfxI2c_I2c_Status IfxI2c_I2c_read2(IfxI2c_I2c_Device *i2cDevice, volatile uint8 *data, Ifx_SizeT size);
+
+/** \brief writes to the I2c device
+ * Note: IfxI2c_I2c_write2  is the newly designed API which support I2C RESTART mode
+ * \param i2cDevice Device Handler
+ * \param data data pointer
+ * \param size size of data
+ * \return status
+ */
+IFX_EXTERN IfxI2c_I2c_Status IfxI2c_I2c_write2(IfxI2c_I2c_Device *i2cDevice, volatile uint8 *data, Ifx_SizeT size);
+
+/** \brief Switch to high speed modes
+ * \param i2c pointer to i2c registers
+ * \return status
+ */
+IFX_EXTERN IfxI2c_I2c_Status IfxI2c_I2c_switch_to_highspeed(Ifx_I2C *i2c);
 #endif /* IFXI2C_I2C_H */

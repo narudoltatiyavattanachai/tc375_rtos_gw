@@ -3,8 +3,8 @@
  * \brief GTM  basic functionality
  * \ingroup IfxLld_Gtm
  *
- * \version iLLD_1_0_1_16_0_1
- * \copyright Copyright (c) 2022 Infineon Technologies AG. All rights reserved.
+ * \version iLLD_1_0_1_17_0
+ * \copyright Copyright (c) 2023 Infineon Technologies AG. All rights reserved.
  *
  *
  *
@@ -268,7 +268,7 @@ IFX_INLINE void IfxGtm_Tom_Ch_setClockSource(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch cha
  * \param compareOne Compare one value
  * \return None
  */
-IFX_INLINE void IfxGtm_Tom_Ch_setCompare(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint32 compareZero, uint32 compareOne);
+IFX_INLINE void IfxGtm_Tom_Ch_setCompare(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint16 compareZero, uint16 compareOne);
 
 /** \brief Sets the compare 1 value
  * \param tom Pointer to the TOM object
@@ -276,7 +276,7 @@ IFX_INLINE void IfxGtm_Tom_Ch_setCompare(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel
  * \param compareOne Compare one value
  * \return None
  */
-IFX_INLINE void IfxGtm_Tom_Ch_setCompareOne(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint32 compareOne);
+IFX_INLINE void IfxGtm_Tom_Ch_setCompareOne(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint16 compareOne);
 
 /** \brief Sets the compare 1 shadow value
  * \param tom Pointer to the TOM object
@@ -284,7 +284,7 @@ IFX_INLINE void IfxGtm_Tom_Ch_setCompareOne(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch chan
  * \param shadowOne Compare one shadow value
  * \return None
  */
-IFX_INLINE void IfxGtm_Tom_Ch_setCompareOneShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint32 shadowOne);
+IFX_INLINE void IfxGtm_Tom_Ch_setCompareOneShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint16 shadowOne);
 
 /** \brief Sets the compare 0 and 1 shadow values
  * \param tom Pointer to the TOM object
@@ -293,7 +293,7 @@ IFX_INLINE void IfxGtm_Tom_Ch_setCompareOneShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_C
  * \param shadowOne Compare one shadow value
  * \return None
  */
-IFX_INLINE void IfxGtm_Tom_Ch_setCompareShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint32 shadowZero, uint32 shadowOne);
+IFX_INLINE void IfxGtm_Tom_Ch_setCompareShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint16 shadowZero, uint16 shadowOne);
 
 /** \brief Sets the compare 0 value
  * \param tom Pointer to the TOM object
@@ -301,7 +301,7 @@ IFX_INLINE void IfxGtm_Tom_Ch_setCompareShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch c
  * \param compareZero Compare zero value
  * \return None
  */
-IFX_INLINE void IfxGtm_Tom_Ch_setCompareZero(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint32 compareZero);
+IFX_INLINE void IfxGtm_Tom_Ch_setCompareZero(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint16 compareZero);
 
 /** \brief Sets the compare 0 shadow value
  * \param tom Pointer to the TOM object
@@ -309,7 +309,7 @@ IFX_INLINE void IfxGtm_Tom_Ch_setCompareZero(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch cha
  * \param shadowZero Compare zero shadow value
  * \return None
  */
-IFX_INLINE void IfxGtm_Tom_Ch_setCompareZeroShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint32 shadowZero);
+IFX_INLINE void IfxGtm_Tom_Ch_setCompareZeroShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint16 shadowZero);
 
 /** \brief Sets the counter value
  * \param tom Pointer to the TOM object
@@ -719,7 +719,7 @@ IFX_INLINE void IfxGtm_Tom_Ch_setClockSource(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch cha
 }
 
 
-IFX_INLINE void IfxGtm_Tom_Ch_setCompare(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint32 compareZero, uint32 compareOne)
+IFX_INLINE void IfxGtm_Tom_Ch_setCompare(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint16 compareZero, uint16 compareOne)
 {
     Ifx_GTM_TOM_CH *tomCh = IfxGtm_Tom_Ch_getChannelPointer(tom, channel);
 
@@ -728,7 +728,7 @@ IFX_INLINE void IfxGtm_Tom_Ch_setCompare(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel
 }
 
 
-IFX_INLINE void IfxGtm_Tom_Ch_setCompareOne(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint32 compareOne)
+IFX_INLINE void IfxGtm_Tom_Ch_setCompareOne(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint16 compareOne)
 {
     Ifx_GTM_TOM_CH *tomCh = IfxGtm_Tom_Ch_getChannelPointer(tom, channel);
 
@@ -736,7 +736,7 @@ IFX_INLINE void IfxGtm_Tom_Ch_setCompareOne(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch chan
 }
 
 
-IFX_INLINE void IfxGtm_Tom_Ch_setCompareOneShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint32 shadowOne)
+IFX_INLINE void IfxGtm_Tom_Ch_setCompareOneShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint16 shadowOne)
 {
     Ifx_GTM_TOM_CH *tomCh = IfxGtm_Tom_Ch_getChannelPointer(tom, channel);
 
@@ -744,7 +744,7 @@ IFX_INLINE void IfxGtm_Tom_Ch_setCompareOneShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_C
 }
 
 
-IFX_INLINE void IfxGtm_Tom_Ch_setCompareShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint32 shadowZero, uint32 shadowOne)
+IFX_INLINE void IfxGtm_Tom_Ch_setCompareShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint16 shadowZero, uint16 shadowOne)
 {
     Ifx_GTM_TOM_CH *tomCh = IfxGtm_Tom_Ch_getChannelPointer(tom, channel);
 
@@ -753,7 +753,7 @@ IFX_INLINE void IfxGtm_Tom_Ch_setCompareShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch c
 }
 
 
-IFX_INLINE void IfxGtm_Tom_Ch_setCompareZero(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint32 compareZero)
+IFX_INLINE void IfxGtm_Tom_Ch_setCompareZero(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint16 compareZero)
 {
     Ifx_GTM_TOM_CH *tomCh = IfxGtm_Tom_Ch_getChannelPointer(tom, channel);
 
@@ -761,7 +761,7 @@ IFX_INLINE void IfxGtm_Tom_Ch_setCompareZero(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch cha
 }
 
 
-IFX_INLINE void IfxGtm_Tom_Ch_setCompareZeroShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint32 shadowZero)
+IFX_INLINE void IfxGtm_Tom_Ch_setCompareZeroShadow(Ifx_GTM_TOM *tom, IfxGtm_Tom_Ch channel, uint16 shadowZero)
 {
     Ifx_GTM_TOM_CH *tomCh = IfxGtm_Tom_Ch_getChannelPointer(tom, channel);
 

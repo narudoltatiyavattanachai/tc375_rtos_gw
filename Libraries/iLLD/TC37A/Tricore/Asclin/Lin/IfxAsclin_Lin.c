@@ -2,8 +2,8 @@
  * \file IfxAsclin_Lin.c
  * \brief ASCLIN LIN details
  *
- * \version iLLD_1_0_1_16_0_1
- * \copyright Copyright (c) 2022 Infineon Technologies AG. All rights reserved.
+ * \version iLLD_1_0_1_17_0
+ * \copyright Copyright (c) 2023 Infineon Technologies AG. All rights reserved.
  *
  *
  *
@@ -353,7 +353,7 @@ IfxAsclin_Status IfxAsclin_Lin_initModule(IfxAsclin_Lin *asclin, const IfxAsclin
     if (config->isInterruptMode)
     {
         Ifx_ASCLIN_FLAGSENABLE flagsenable;
-        flagsenable.U = asclinSFR->FLAGSENABLE.U;
+        flagsenable.U = 0;
 
         if ((config->interrupt.rxPriority > 0) || (tos == IfxSrc_Tos_dma))
         {
@@ -882,7 +882,7 @@ void IfxAsclin_Lin_sendFrame(IfxAsclin_Lin *asclin, IfxAsclin_Lin_PduType *pdupt
 
         /*Enable Interrupt flags for Header Transmission*/
         Ifx_ASCLIN_FLAGSENABLE flagsenable;
-        flagsenable.U            = asclinSFR->FLAGSENABLE.U;
+        flagsenable.U            = 0;
         flagsenable.B.THE        = 1;
         flagsenable.B.HTE        = 1;
         flagsenable.B.CEE        = 1;
@@ -921,7 +921,7 @@ void IfxAsclin_Lin_sendFrame(IfxAsclin_Lin *asclin, IfxAsclin_Lin_PduType *pdupt
         IfxAsclin_Lin_clearFlagsStatus(asclin);
 
         Ifx_ASCLIN_FLAGSENABLE flagsenable;
-        flagsenable.U = asclinSFR->FLAGSENABLE.U;
+        flagsenable.U = 0;
 
         if (pduptr->direction == IfxAsclin_Lin_Direction_TransmitHeaderAndResponse)
         {

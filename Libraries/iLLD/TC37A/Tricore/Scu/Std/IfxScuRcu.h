@@ -3,7 +3,7 @@
  * \brief SCU  basic functionality
  * \ingroup IfxLld_Scu
  *
- * \version iLLD_1_0_1_16_0_1
+ * \version iLLD_1_0_1_17_0
  * \copyright Copyright (c) 2023 Infineon Technologies AG. All rights reserved.
  *
  *
@@ -178,6 +178,11 @@ IFX_EXTERN IfxScuRcu_ResetCode IfxScuRcu_evaluateReset(void);
  * \return None
  */
 IFX_EXTERN void IfxScuRcu_performReset(IfxScuRcu_ResetType resetType, uint16 userResetInfo);
+
+/** \brief This function Evaluate the Reset and returns the reset cause/details.
+ * \return Reset code which contains Reset type, trigger and reason details.
+ */
+IFX_EXTERN IfxScuRcu_ResetCode IfxScuRcu_getResetReason(void);
 
 /******************************************************************************/
 /*---------------------Inline Function Implementations------------------------*/

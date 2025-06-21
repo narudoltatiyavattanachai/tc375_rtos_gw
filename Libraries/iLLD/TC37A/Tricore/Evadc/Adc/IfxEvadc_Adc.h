@@ -3,7 +3,7 @@
  * \brief EVADC ADC details
  * \ingroup IfxLld_Evadc
  *
- * \version iLLD_1_0_1_16_0_1
+ * \version iLLD_1_0_1_17_0
  * \copyright Copyright (c) 2023 Infineon Technologies AG. All rights reserved.
  *
  *
@@ -346,7 +346,7 @@ typedef struct
 {
     boolean                           globalResultUsage;              /**< \brief Specifies storage in global result register */
     boolean                           synchonize;                     /**< \brief Specifies synchronized conversion channel */
-    boolean                           rightAlignedStorage;            /**< \brief Specifies result is right aligned */
+    boolean                           rightAlignedStorage;            /**< \brief Specifies result position, if False - result is right aligned, if True - result is left aligned */
     Ifx_Priority                      resultPriority;                 /**< \brief Interrupt priority of the result trigger interrupt, if 0 the interrupt is disable */
     Ifx_Priority                      channelPriority;                /**< \brief Interrupt priority of the channel trigger interrupt, if 0 the interrupt is disable */
     IfxSrc_Tos                        resultServProvider;             /**< \brief Interrupt service provider for the result trigger interrupt */

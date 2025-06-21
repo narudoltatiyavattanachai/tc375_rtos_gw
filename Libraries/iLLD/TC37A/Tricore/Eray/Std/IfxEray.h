@@ -3,8 +3,8 @@
  * \brief ERAY  basic functionality
  * \ingroup IfxLld_Eray
  *
- * \version iLLD_1_0_1_16_0_1
- * \copyright Copyright (c) 2022 Infineon Technologies AG. All rights reserved.
+ * \version iLLD_1_0_1_17_0
+ * \copyright Copyright (c) 2023 Infineon Technologies AG. All rights reserved.
  *
  *
  *
@@ -1297,6 +1297,12 @@ IFX_INLINE void IfxEray_configureSuc1Register(Ifx_ERAY *eray, uint32 configValue
  */
 IFX_INLINE void IfxEray_setMacroTickValue(Ifx_ERAY *eray, uint32 tickValue);
 
+/** \brief Returns the Cycle Counter Value
+ * \param eray pointer to ERAY module registers.
+ * \return Cycle Count Value
+ */
+IFX_INLINE uint8 IfxEray_getCycleCountValue(Ifx_ERAY *eray);
+
 /******************************************************************************/
 /*---------------------Inline Function Implementations------------------------*/
 /******************************************************************************/
@@ -2028,6 +2034,12 @@ IFX_INLINE void IfxEray_configureSuc1Register(Ifx_ERAY *eray, uint32 configValue
 IFX_INLINE void IfxEray_setMacroTickValue(Ifx_ERAY *eray, uint32 tickValue)
 {
     eray->MTCCV.U = tickValue;
+}
+
+
+IFX_INLINE uint8 IfxEray_getCycleCountValue(Ifx_ERAY *eray)
+{
+    return (uint8)eray->MTCCV.B.CCV;
 }
 
 

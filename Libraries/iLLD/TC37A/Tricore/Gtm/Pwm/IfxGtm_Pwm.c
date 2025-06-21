@@ -2,7 +2,7 @@
  * \file IfxGtm_Pwm.c
  * \brief GTM PWM details
  *
- * \version iLLD_1_0_1_16_0_1
+ * \version iLLD_1_0_1_17_0
  * \copyright Copyright (c) 2023 Infineon Technologies AG. All rights reserved.
  *
  *
@@ -273,13 +273,13 @@ IFX_INLINE void IfxGtm_Pwm_disableChannelsSyncUpdate(IfxGtm_Pwm *pwm)
     /* Disable UPEN in TGC0/1 or AGC if all channels are in one control unit */
     if (pwm->globalControl.reg1 == NULL_PTR)
     {
-        *globalctrl->reg0 = pwm->globalControl.upenMask0 & (uint32)IFXGTM_PWM_UPEN_ENABLE_VALUE;
+        *globalctrl->reg0 = pwm->globalControl.upenMask0 & (uint32)IFXGTM_PWM_UPEN_DISABLE_VALUE;
     }
     /* Disable UPEN in TGC0,1 if all channels not in one control unit */
     else
     {
-        *globalctrl->reg0 = pwm->globalControl.upenMask0 & (uint32)IFXGTM_PWM_UPEN_ENABLE_VALUE;
-        *globalctrl->reg1 = pwm->globalControl.upenMask1 & (uint32)IFXGTM_PWM_UPEN_ENABLE_VALUE;
+        *globalctrl->reg0 = pwm->globalControl.upenMask0 & (uint32)IFXGTM_PWM_UPEN_DISABLE_VALUE;
+        *globalctrl->reg1 = pwm->globalControl.upenMask1 & (uint32)IFXGTM_PWM_UPEN_DISABLE_VALUE;
     }
 }
 
@@ -538,7 +538,31 @@ void IfxGtm_Pwm_init(IfxGtm_Pwm *pwm, IfxGtm_Pwm_Channel *channels, IfxGtm_Pwm_C
     pwm->sourceFrequency = IfxGtm_Pwm_getSubModuleClockFrequency(pwm, config->gtmSFR, config->clockSource);
     pwm->dtmFrequency    = IfxGtm_Pwm_getDtmClockFrequency(pwm, config->gtmSFR, pwm->dtmClockSource);
 
-    /* 4. Initialize PWM channels */
+    /* 4. Perform software reset of PWM channels */
+    idx = (uint8)config->channels[0].timerCh;
+
+    while (idx <= (uint8)config->channels[config->numChannels - 1u].timerCh)   /* Reset all channels in range even if not configured by user */
+    {
+        if (pwm->subModule == IfxGtm_Pwm_SubModule_atom)
+        {
+            pwm->clusterSFR.ATOM->AGC.GLB_CTRL.U = 1u << (IFX_GTM_ATOM_AGC_GLB_CTRL_RST_CH0_OFF + idx);
+        }
+        else
+        {
+            if (IFXGTM_PWM_GET_TGC_INDEX(idx) == 0)
+            {
+                pwm->clusterSFR.TOM->TGC0_GLB_CTRL.U = 1u << (IFX_GTM_TOM_TGC_GLB_CTRL_RST_CH0_OFF + (idx & 0x7u));
+            }
+            else
+            {
+                pwm->clusterSFR.TOM->TGC1_GLB_CTRL.U = 1u << (IFX_GTM_TOM_TGC_GLB_CTRL_RST_CH0_OFF + (idx & 0x7u));
+            }
+        }
+
+        idx++;
+    }
+
+    /* 5. Initialize PWM channels */
     for (idx = 0; idx < config->numChannels; idx++)
     {
         IfxGtm_Pwm_initChannel(pwm, config, (IfxGtm_Pwm_SyncChannelIndex)idx);
@@ -547,13 +571,13 @@ void IfxGtm_Pwm_init(IfxGtm_Pwm *pwm, IfxGtm_Pwm_Channel *channels, IfxGtm_Pwm_C
         pwm->numChannels += 1;
     }
 
-    /* 5. Update masks and pointers to GLB_CTRL registers */
+    /* 6. Update masks and pointers to GLB_CTRL registers */
     IfxGtm_Pwm_updateGlobalControlUnitData(pwm);
 
-    /* 6. Change state */
+    /* 7. Change state */
     pwm->state = IfxGtm_Pwm_State_init;
 
-    /* 7. Synchronously start the channels */
+    /* 8. Synchronously start the channels */
     if (config->syncStart == TRUE)
     {
         IfxGtm_Pwm_startSyncedChannels(pwm);
@@ -872,7 +896,8 @@ IFX_STATIC void IfxGtm_Pwm_initInterrupts(IfxGtm_Pwm *pwm, IfxGtm_Pwm_InterruptC
 IFX_STATIC void IfxGtm_Pwm_updateGlobalControlUnitData(IfxGtm_Pwm *pwm)
 {
     IfxGtm_Pwm_SubModule_Ch firstChannel = pwm->channels[0].timerCh;
-    uint8                   lastChannel  = ((uint8)firstChannel + pwm->numChannels - 1u);
+    IfxGtm_Pwm_SubModule_Ch lastChannel  = pwm->channels[pwm->numChannels - 1u].timerCh;
+    uint32                  mask         = 0;
 
     /* Initialize */
     pwm->globalControl.upenMask0     = 0u;
@@ -882,10 +907,20 @@ IFX_STATIC void IfxGtm_Pwm_updateGlobalControlUnitData(IfxGtm_Pwm *pwm)
     pwm->globalControl.endisCtrlReg0 = NULL_PTR;
     pwm->globalControl.endisCtrlReg1 = NULL_PTR;
 
+    /* Calculate Update enable mask for channels being used. Channels may not be consecutive. */
+    {
+        uint8 idx = 0;
+
+        for (idx = 0; idx < pwm->numChannels; idx++)
+        {
+            mask |= 3u << (pwm->channels[idx].timerCh << 1u);
+        }
+    }
+
     if (pwm->subModule == IfxGtm_Pwm_SubModule_atom)
     {
         /* Get mask for channel range from first to last */
-        pwm->globalControl.upenMask0     = (uint32)((uint32)IFXGTM_PWM_CHANNELS_MASK(firstChannel, lastChannel) << (uint32)IFX_GTM_ATOM_AGC_GLB_CTRL_UPEN_CTRL0_OFF);
+        pwm->globalControl.upenMask0     = (mask & 0xFFFFu) << (uint32)IFX_GTM_ATOM_AGC_GLB_CTRL_UPEN_CTRL0_OFF;
         pwm->globalControl.reg0          = (volatile uint32 *)(volatile void *)&pwm->clusterSFR.ATOM->AGC.GLB_CTRL.U;
         pwm->globalControl.endisCtrlReg0 = (volatile uint32 *)(volatile void *)&pwm->clusterSFR.ATOM->AGC.ENDIS_CTRL.U;
     }
@@ -895,8 +930,8 @@ IFX_STATIC void IfxGtm_Pwm_updateGlobalControlUnitData(IfxGtm_Pwm *pwm)
         if (IFXGTM_PWM_GET_TGC_INDEX(firstChannel) != IFXGTM_PWM_GET_TGC_INDEX(lastChannel))
         {
             /* Get masks and values for both control units */
-            pwm->globalControl.upenMask0     = (uint32)(IFXGTM_PWM_CHANNELS_MASK(firstChannel, (uint32)IfxGtm_Pwm_SubModule_Ch_7) << (uint32)IFX_GTM_TOM_TGC_GLB_CTRL_UPEN_CTRL0_OFF);
-            pwm->globalControl.upenMask1     = (uint32)(IFXGTM_PWM_CHANNELS_MASK(IfxGtm_Pwm_SubModule_Ch_8, lastChannel) << (uint32)IFX_GTM_TOM_TGC_GLB_CTRL_UPEN_CTRL0_OFF);
+            pwm->globalControl.upenMask0     = (mask & 0xFFFFu) << (uint32)IFX_GTM_TOM_TGC_GLB_CTRL_UPEN_CTRL0_OFF;
+            pwm->globalControl.upenMask1     = mask & 0xFFFF0000u;
             pwm->globalControl.reg0          = (volatile uint32 *)(volatile void *)&pwm->clusterSFR.TOM->TGC0_GLB_CTRL.U;
             pwm->globalControl.reg1          = (volatile uint32 *)(volatile void *)&pwm->clusterSFR.TOM->TGC1_GLB_CTRL.U;
             pwm->globalControl.endisCtrlReg0 = (volatile uint32 *)&pwm->clusterSFR.TOM->TGC0_ENDIS_CTRL.U;
@@ -904,7 +939,7 @@ IFX_STATIC void IfxGtm_Pwm_updateGlobalControlUnitData(IfxGtm_Pwm *pwm)
         }
         else
         {
-            pwm->globalControl.upenMask0 = (uint32)(IFXGTM_PWM_CHANNELS_MASK(firstChannel, lastChannel) << (uint32)IFX_GTM_TOM_TGC_GLB_CTRL_UPEN_CTRL0_OFF);
+            pwm->globalControl.upenMask0 = (mask & 0xFFFFu) << (uint32)IFX_GTM_TOM_TGC_GLB_CTRL_UPEN_CTRL0_OFF;
 
             if (IFXGTM_PWM_GET_TGC_INDEX(lastChannel) == 0)
             {
@@ -936,8 +971,8 @@ void IfxGtm_Pwm_startSyncedChannels(IfxGtm_Pwm *pwm)
         if (pwm->globalControl.reg1 != NULL_PTR)
         {
             /* Enable channels on trigger */
-            *pwm->globalControl.endisCtrlReg0 = (IFXGTM_PWM_UPEN_ENABLE_VALUE & pwm->globalControl.upenMask0) >> 16u;
-            *pwm->globalControl.endisCtrlReg1 = (IFXGTM_PWM_UPEN_ENABLE_VALUE & pwm->globalControl.upenMask1) >> 16u;
+            *pwm->globalControl.endisCtrlReg0 = (~(~IFXGTM_PWM_UPEN_ENABLE_VALUE & pwm->globalControl.upenMask0)) >> 16u;
+            *pwm->globalControl.endisCtrlReg1 = (~(~IFXGTM_PWM_UPEN_ENABLE_VALUE & pwm->globalControl.upenMask1)) >> 16u;
 
             /* 2.1. Find which CMU_CLK is enabled and use the first one for TBU */
             for (tbuClock = (uint8)IfxGtm_Cmu_Clk_0; tbuClock < (uint8)IfxGtm_Cmu_Clk_7; tbuClock++)
@@ -990,7 +1025,7 @@ void IfxGtm_Pwm_startSyncedChannels(IfxGtm_Pwm *pwm)
         else
         {
             /* Enable channels on trigger */
-            *pwm->globalControl.endisCtrlReg0 = (IFXGTM_PWM_UPEN_ENABLE_VALUE & pwm->globalControl.upenMask0) >> 16u;
+            *pwm->globalControl.endisCtrlReg0 = (~(~IFXGTM_PWM_UPEN_ENABLE_VALUE & pwm->globalControl.upenMask0)) >> 16u;
             *pwm->globalControl.reg0          = 0x1u;
         }
 
@@ -1014,8 +1049,8 @@ void IfxGtm_Pwm_stopSyncedChannels(IfxGtm_Pwm *pwm)
         if (pwm->globalControl.reg1 != NULL_PTR)
         {
             /* Disable channel on trigger */
-            *pwm->globalControl.endisCtrlReg0 = (IFXGTM_PWM_UPEN_DISABLE_VALUE & pwm->globalControl.upenMask0) >> 16u;
-            *pwm->globalControl.endisCtrlReg1 = (IFXGTM_PWM_UPEN_DISABLE_VALUE & pwm->globalControl.upenMask1) >> 16u;
+            *pwm->globalControl.endisCtrlReg0 = (~(~IFXGTM_PWM_UPEN_DISABLE_VALUE & pwm->globalControl.upenMask0)) >> 16u;
+            *pwm->globalControl.endisCtrlReg1 = (~(~IFXGTM_PWM_UPEN_DISABLE_VALUE & pwm->globalControl.upenMask1)) >> 16u;
 
             /* 2.1. Find which CMU_CLK is enabled and use the first one for TBU */
             for (tbuClock = IfxGtm_Cmu_Clk_0; tbuClock < IfxGtm_Cmu_Clk_7; tbuClock++)
@@ -1068,7 +1103,7 @@ void IfxGtm_Pwm_stopSyncedChannels(IfxGtm_Pwm *pwm)
         else
         {
             /* Disable channel on trigger */
-            *pwm->globalControl.endisCtrlReg0 = (IFXGTM_PWM_UPEN_DISABLE_VALUE & pwm->globalControl.upenMask0) >> 16u;
+            *pwm->globalControl.endisCtrlReg0 = (~(~IFXGTM_PWM_UPEN_DISABLE_VALUE & pwm->globalControl.upenMask0)) >> 16u;
             *pwm->globalControl.reg0          = 0x1u;
         }
 
@@ -1106,22 +1141,22 @@ void IfxGtm_Pwm_startSyncedGroups(IfxGtm_Pwm *pwm1, IfxGtm_Pwm *pwm2)
     tbuSFR->CHEN.B.ENDIS_CH0 = (uint8)IfxGtm_FeatureControl_disable;
 
     /* 4. Configure AGC/TGC0/1 of pwm1 */
-    *pwm1->globalControl.endisCtrlReg0 = (IFXGTM_PWM_UPEN_ENABLE_VALUE & pwm1->globalControl.upenMask0) >> 16u;
+    *pwm1->globalControl.endisCtrlReg0 = (~(~IFXGTM_PWM_UPEN_ENABLE_VALUE & pwm1->globalControl.upenMask0)) >> 16u;
     IfxGtm_Pwm_configureTimeBaseTrigger(&pwm1->clusterSFR, pwm1->subModule, pwm1->channels[0].timerCh, IFXGTM_PWM_TBU_TIMEOUT_TICKS);
 
     if (pwm1->globalControl.reg1 != NULL_PTR)
     {
-        *pwm1->globalControl.endisCtrlReg1 = (IFXGTM_PWM_UPEN_ENABLE_VALUE & pwm1->globalControl.upenMask1) >> 16u;
+        *pwm1->globalControl.endisCtrlReg1 = (~(~IFXGTM_PWM_UPEN_ENABLE_VALUE & pwm1->globalControl.upenMask1)) >> 16u;
         IfxGtm_Pwm_configureTimeBaseTrigger(&pwm1->clusterSFR, pwm1->subModule, IfxGtm_Pwm_SubModule_Ch_8, IFXGTM_PWM_TBU_TIMEOUT_TICKS);
     }
 
     /* 5. Configure AGC/TGC0/1 of pwm1 */
-    *pwm2->globalControl.endisCtrlReg0 = (IFXGTM_PWM_UPEN_ENABLE_VALUE & pwm2->globalControl.upenMask0) >> 16u;
+    *pwm2->globalControl.endisCtrlReg0 = (~(~IFXGTM_PWM_UPEN_ENABLE_VALUE & pwm2->globalControl.upenMask0)) >> 16u;
     IfxGtm_Pwm_configureTimeBaseTrigger(&pwm2->clusterSFR, pwm2->subModule, pwm2->channels[0].timerCh, IFXGTM_PWM_TBU_TIMEOUT_TICKS);
 
     if (pwm2->globalControl.reg1 != NULL_PTR)
     {
-        *pwm2->globalControl.endisCtrlReg1 = (IFXGTM_PWM_UPEN_ENABLE_VALUE & pwm2->globalControl.upenMask1) >> 16u;
+        *pwm2->globalControl.endisCtrlReg1 = (~(~IFXGTM_PWM_UPEN_ENABLE_VALUE & pwm2->globalControl.upenMask1)) >> 16u;
         IfxGtm_Pwm_configureTimeBaseTrigger(&pwm2->clusterSFR, pwm2->subModule, IfxGtm_Pwm_SubModule_Ch_8, IFXGTM_PWM_TBU_TIMEOUT_TICKS);
     }
 
@@ -1180,22 +1215,22 @@ void IfxGtm_Pwm_stopSyncedGroups(IfxGtm_Pwm *pwm1, IfxGtm_Pwm *pwm2)
     tbuSFR->CHEN.B.ENDIS_CH0 = (uint8)IfxGtm_FeatureControl_disable;
 
     /* 4. Configure AGC/TGC0/1 of pwm1 */
-    *pwm1->globalControl.endisCtrlReg0 = (IFXGTM_PWM_UPEN_DISABLE_VALUE & pwm1->globalControl.upenMask0) >> 16u;
+    *pwm1->globalControl.endisCtrlReg0 = (~(~IFXGTM_PWM_UPEN_DISABLE_VALUE & pwm1->globalControl.upenMask0)) >> 16u;
     IfxGtm_Pwm_configureTimeBaseTrigger(&pwm1->clusterSFR, pwm1->subModule, pwm1->channels[0].timerCh, IFXGTM_PWM_TBU_TIMEOUT_TICKS);
 
     if (pwm1->globalControl.reg1 != NULL_PTR)
     {
-        *pwm1->globalControl.endisCtrlReg1 = (IFXGTM_PWM_UPEN_DISABLE_VALUE & pwm1->globalControl.upenMask1) >> 16u;
+        *pwm1->globalControl.endisCtrlReg1 = (~(~IFXGTM_PWM_UPEN_DISABLE_VALUE & pwm1->globalControl.upenMask1)) >> 16u;
         IfxGtm_Pwm_configureTimeBaseTrigger(&pwm1->clusterSFR, pwm1->subModule, IfxGtm_Pwm_SubModule_Ch_8, IFXGTM_PWM_TBU_TIMEOUT_TICKS);
     }
 
     /* 5. Configure AGC/TGC0/1 of pwm1 */
-    *pwm2->globalControl.endisCtrlReg0 = (IFXGTM_PWM_UPEN_DISABLE_VALUE & pwm2->globalControl.upenMask0) >> 16u;
+    *pwm2->globalControl.endisCtrlReg0 = (~(~IFXGTM_PWM_UPEN_DISABLE_VALUE & pwm2->globalControl.upenMask0)) >> 16u;
     IfxGtm_Pwm_configureTimeBaseTrigger(&pwm2->clusterSFR, pwm2->subModule, pwm2->channels[0].timerCh, IFXGTM_PWM_TBU_TIMEOUT_TICKS);
 
     if (pwm2->globalControl.reg1 != NULL_PTR)
     {
-        *pwm2->globalControl.endisCtrlReg1 = (IFXGTM_PWM_UPEN_DISABLE_VALUE & pwm2->globalControl.upenMask1) >> 16u;
+        *pwm2->globalControl.endisCtrlReg1 = (~(~IFXGTM_PWM_UPEN_DISABLE_VALUE & pwm2->globalControl.upenMask1)) >> 16u;
         IfxGtm_Pwm_configureTimeBaseTrigger(&pwm2->clusterSFR, pwm2->subModule, IfxGtm_Pwm_SubModule_Ch_8, IFXGTM_PWM_TBU_TIMEOUT_TICKS);
     }
 
@@ -1569,6 +1604,9 @@ void IfxGtm_Pwm_updateChannelsPulseImmediate(IfxGtm_Pwm *pwm, float32 *requestPh
 
 void IfxGtm_Pwm_interruptHandler(IfxGtm_Pwm_Channel *channel, void *data)
 {
+    /* Note: IRQ_NOTIFY is raised even for disabled IRQ_EN.CCUxTC_IRQ_EN
+     * Therefore, check each bit individually
+     */
     /* CCU0 interrupt handler */
     if ((*channel->registers.IRQ_NOTIFY & 0x1u) == 1u)
     {
@@ -1577,19 +1615,23 @@ void IfxGtm_Pwm_interruptHandler(IfxGtm_Pwm_Channel *channel, void *data)
         {
             (channel->periodEvent)(data);
         }
+
+        /* Clear only period interrupt */
+        *channel->registers.IRQ_NOTIFY = 0x1u;
     }
-    /* CCU1 intterrupt handler */
-    else
+
+    /* CCU1 interrupt handler */
+    if ((*channel->registers.IRQ_NOTIFY & 0x2u) == 2u)
     {
         /* Call callback function */
         if (channel->dutyEvent != NULL_PTR)
         {
             (channel->dutyEvent)(data);
         }
-    }
 
-    /* Clear interrupt */
-    *channel->registers.IRQ_NOTIFY = 0x3u;
+        /* Clear only duty interrupt */
+        *channel->registers.IRQ_NOTIFY = 0x2u;
+    }
 }
 
 

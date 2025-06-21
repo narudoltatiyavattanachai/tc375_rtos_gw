@@ -3,7 +3,7 @@
  * \brief FLASH  basic functionality
  * \ingroup IfxLld_Flash
  *
- * \version iLLD_1_0_1_16_0_1
+ * \version iLLD_1_0_1_17_0
  * \copyright Copyright (c) 2022 Infineon Technologies AG. All rights reserved.
  *
  *
