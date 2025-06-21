@@ -9,7 +9,7 @@
 
 #define configMAX_PRIORITIES                       ( 10 )
 #define configMINIMAL_STACK_SIZE                   ( ( unsigned short ) 256 )
-#define configTOTAL_HEAP_SIZE                      ( ( size_t ) ( 32U * 1024U ) )
+#define configTOTAL_HEAP_SIZE                      ( ( size_t ) ( 64U * 1024U ) )
 #define configMAX_TASK_NAME_LEN                    ( 16 )
 
 #define configENABLE_BACKWARD_COMPATIBILITY        0

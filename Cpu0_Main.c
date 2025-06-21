@@ -75,22 +75,23 @@ void core0_main(void)
     
     cpu0_main_count++; //Step No. 4
 
-    /* Wait for CPU sync event */
-    IfxCpu_emitEvent(&g_cpuSyncEvent);
-    IfxCpu_waitEvent(&g_cpuSyncEvent, 1);
-    
-    cpu0_main_count++; //Step No. 5
 
     /* Create init task on CPU0 */
     xTaskCreate(task_cpu0_init, "INIT CPU0", CPU0_INIT_TASK_STACK, NULL, CPU0_INIT_TASK_PRIORITY, NULL);
     
-    cpu0_main_count++; //Step No. 6
+    cpu0_main_count++; //Step No. 5
 
     /* Create placeholder tasks on CPU0 */
     xTaskCreate(task_cpu0_1ms, "CPU0 1MS", CPU0_1MS_TASK_STACK, NULL, CPU0_1MS_TASK_PRIORITY, NULL);
     xTaskCreate(task_cpu0_10ms, "CPU0 10MS", CPU0_10MS_TASK_STACK, NULL, CPU0_10MS_TASK_PRIORITY, NULL);
     xTaskCreate(task_cpu0_100ms, "CPU0 100MS", CPU0_100MS_TASK_STACK, NULL, CPU0_100MS_TASK_PRIORITY, NULL);
     xTaskCreate(task_cpu0_1000ms, "CPU0 1000MS", CPU0_1000MS_TASK_STACK, NULL, CPU0_1000MS_TASK_PRIORITY, NULL);
+    
+    cpu0_main_count++; //Step No. 6
+
+    /* Wait for CPU sync event */
+    IfxCpu_emitEvent(&g_cpuSyncEvent);
+    IfxCpu_waitEvent(&g_cpuSyncEvent, 1);
     
     cpu0_main_count++; //Step No. 7
 
