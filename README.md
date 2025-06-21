@@ -1,8 +1,16 @@
-# TC375 RTOS Gateway - Release Version
+# TC375 RTOS Gateway Example
+
+<p align="center">
+  <img src="docs/pics/Demo_Board.png" alt="Demo Board" style="max-width: 100%; height: auto;"/>
+</p>
 
 ## Project Overview
 
 A multi-CPU RTOS system for the TC375 microcontroller featuring FreeRTOS on CPU0 and bare-metal compute nodes on CPU1/CPU2. This release demonstrates inter-CPU communication, button handling with debouncing, and coordinated LED control.
+
+## Purpose
+
+This project demonstrates and tests the hardware CAN FD gateway functionality on an Infineon TriCore TC375 device. A custom shield board is used to interface with the main development board, enabling evaluation of CAN FD communication and gateway capabilities in a real hardware setup.
 
 ## Quick Start
 
@@ -16,6 +24,10 @@ A multi-CPU RTOS system for the TC375 microcontroller featuring FreeRTOS on CPU0
 1. **Power On**: System initializes, LED1 starts blinking every 100ms
 2. **Button Press**: Press BUTTON_0 to toggle LED2 blinking process
 3. **LED2 Behavior**: When active, LED2 blinks at 500ms intervals via CPU1/CPU2 coordination
+
+## Purpose
+
+This project demonstrates and tests the hardware CAN FD gateway functionality on an Infineon TriCore TC375 device. A custom shield board is used to interface with the main development board, enabling evaluation of CAN FD communication and gateway capabilities in a real hardware setup.
 
 ## Architecture Summary
 
