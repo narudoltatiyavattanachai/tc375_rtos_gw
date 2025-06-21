@@ -73,8 +73,8 @@ void task_cpu0_init(void *arg)
         //{
 
         /* Global semaphores for CPU0 */
-        SemaphoreHandle_t g_cpu0InitSem = NULL;
-        SemaphoreHandle_t g_cpu0TickSem = NULL;
+        //SemaphoreHandle_t g_cpu0InitSem = NULL;
+        //SemaphoreHandle_t g_cpu0TickSem = NULL;
 
         /* Global flag variables */
         volatile bool BUTTON_PRESSED_FLAG = false;

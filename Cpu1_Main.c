@@ -32,8 +32,6 @@
 
 extern IfxCpu_syncEvent g_cpuSyncEvent;
 
-static uint32_t cpu1_tick_counter = 0;
-
 void core1_main(void)
 {
     IfxCpu_enableInterrupts();
