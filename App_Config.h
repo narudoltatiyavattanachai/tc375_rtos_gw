@@ -60,6 +60,10 @@ extern volatile uint32_t cpu1_loop_count;
 extern volatile uint32_t cpu2_loop_count;
 extern volatile uint32_t led_process_count;
 
+/* CPU tick counters */
+extern uint32_t cpu1_tick_counter;
+extern uint32_t cpu2_tick_counter;
+
 /* Inter-CPU Communication Flags */
 extern volatile bool LED_PROCESS_ACTIVE;
 extern volatile bool CPU1_EXECUTION_PROCESS;

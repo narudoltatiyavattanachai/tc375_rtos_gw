@@ -56,6 +56,25 @@ uint32_t cpu0_1000ms_count = 0;
 static IfxPort_State previous_button_state = IfxPort_State_high;
 static uint32_t button_debounce_counter = 0;
 
+/* Global flag variables */
+volatile bool BUTTON_PRESSED_FLAG = false;
+
+/* CPU1/CPU2 looping counters */
+volatile uint32_t cpu1_loop_count = 0;
+volatile uint32_t cpu2_loop_count = 0;
+volatile uint32_t led_process_count = 0;
+
+/* CPU tick counters */
+uint32_t cpu1_tick_counter = 0;
+uint32_t cpu2_tick_counter = 0;
+
+/* Sequential execution control variables */
+volatile bool LED_PROCESS_ACTIVE = false;
+volatile bool CPU1_EXECUTION_PROCESS = false;
+volatile bool CPU1_DATA_READY = false;
+volatile bool CPU2_EXECUTION_PROCESS = false;
+volatile bool CPU2_DATA_READY = false;
+
 /*********************************************************************************************************************/
 /*---------------------------------------------Function Implementations----------------------------------------------*/
 /*********************************************************************************************************************/
@@ -76,20 +95,9 @@ void task_cpu0_init(void *arg)
         //SemaphoreHandle_t g_cpu0InitSem = NULL;
         //SemaphoreHandle_t g_cpu0TickSem = NULL;
 
-        /* Global flag variables */
-        volatile bool BUTTON_PRESSED_FLAG = false;
-
-        /* CPU1/CPU2 looping counters */
-        volatile uint32_t cpu1_loop_count = 0;
-        volatile uint32_t cpu2_loop_count = 0;
-        volatile uint32_t led_process_count = 0;
-
-        /* Sequential execution control variables */
-        volatile bool LED_PROCESS_ACTIVE = false;
-        volatile bool CPU1_EXECUTION_PROCESS = false;
-        volatile bool CPU1_DATA_READY = false;
-        volatile bool CPU2_EXECUTION_PROCESS = false;
-        volatile bool CPU2_DATA_READY = false;
+        /* Initialize LED process control */
+        LED_PROCESS_ACTIVE = false;        /* Process starts inactive */
+        BUTTON_PRESSED_FLAG = false;       /* No button press initially */
                  
         /* Initialize BUTTON0 */
         IfxPort_setPinMode(BUTTON_0.port, BUTTON_0.pinIndex, IfxPort_Mode_inputPullUp);
